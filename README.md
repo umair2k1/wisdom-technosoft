@@ -51,7 +51,7 @@ Configure environment variables in the Cloudflare Dashboard under:
 
 | Variable | Description | Example / Default |
 |---|---|---|
-| `SITE_URL` | Canonical base URL used for canonical link tags, sitemaps, and Open Graph meta tags | `https://wisdomtechnosoft.com` |
+| `SITE_URL` | Canonical base URL (use your `*.pages.dev` URL until a custom domain is acquired) | `https://wisdom-technosoft.pages.dev` |
 | `DESTINATION_EMAIL` | Inbox where contact form submissions are delivered | `wisdomtechnosoft04@gmail.com` |
 | `WHATSAPP_NUMBER` | Official WhatsApp number (country code + 10 digits, no `+` or spaces) | `917447331127` |
 | `FORM_SERVICE_KEY` | Optional API key for email forwarding (e.g. [Web3Forms](https://web3forms.com)) | *(Optional string)* |
@@ -61,9 +61,11 @@ Configure environment variables in the Cloudflare Dashboard under:
 
 ---
 
-## 4. Custom Domain & DNS Configuration
+## 4. Custom Domain & DNS Configuration (Optional)
 
-The client owns their domain name. Once domain ownership and DNS management details are confirmed (see `CONTENT_TODO.md`), configure DNS following either option:
+> **No domain yet? No problem:** Cloudflare Pages automatically assigns a free, perpetual, SSL-secured **`https://<project-name>.pages.dev`** domain (for example, `https://wisdom-technosoft.pages.dev`). You can run the live website on this address immediately. When the client purchases or points a custom domain later, connect it via **Custom domains** in the dashboard with zero downtime.
+
+Once domain ownership and DNS management details are confirmed (see `CONTENT_TODO.md`), configure DNS following either option:
 
 ### Option A: Recommended Path (Cloudflare Full DNS)
 *Simplest, zero-maintenance SSL, automatic HTTP/2 & HTTP/3, and DDoS protection.*
