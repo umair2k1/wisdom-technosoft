@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page Not Found (404) &mdash; Wisdom Technosoft</title>
+  <meta name="description" content="The page you were looking for could not be found. Return to Wisdom Technosoft homepage.">
+  <meta name="theme-color" content="#063340">
+  <meta name="color-scheme" content="dark light">
+
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .error-page {
+      min-height: 100svh;
+      background: var(--teal);
+      color: var(--ivory);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    .error-page::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(60% 60% at 80% 20%, rgba(167, 139, 114, 0.16), transparent 70%);
+      pointer-events: none;
+    }
+    .error-main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      padding-block: clamp(100px, 14vh, 160px);
+      position: relative;
+      z-index: 2;
+    }
+    .error-card {
+      max-width: 680px;
+    }
+    .error-code {
+      font-size: clamp(5rem, 14vw, 10rem);
+      font-weight: 800;
+      line-height: .9;
+      letter-spacing: -.04em;
+      color: var(--tan-2);
+      font-family: "Inter Tight", sans-serif;
+      margin-bottom: 20px;
+    }
+    .error-head {
+      font-family: "Instrument Serif", Georgia, serif;
+      font-size: clamp(2.4rem, 5vw, 4.2rem);
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: -.02em;
+      margin-bottom: 20px;
+    }
+    .error-head em {
+      font-style: italic;
+      color: var(--tan-2);
+    }
+    .error-copy {
+      font-size: clamp(1rem, 1.2vw, 1.15rem);
+      line-height: 1.6;
+      color: var(--ivory-70);
+      max-width: 52ch;
+      margin-bottom: 36px;
+    }
+    .error-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 20px 28px;
+    }
+    .error-support {
+      margin-top: 48px;
+      padding-top: 28px;
+      border-top: 1px solid var(--line-light);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px 40px;
+      font-size: 13px;
+      color: var(--ivory-70);
+    }
+    .error-support a {
+      color: var(--ivory);
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      transition: color .3s;
+    }
+    .error-support a:hover {
+      color: var(--tan-2);
+    }
+  </style>
+</head>
+<body class="error-page">
+  <a class="skip-link" href="#error-content">Skip to content</a>
+
+  <header class="nav" style="position: relative; background: transparent; border-bottom: 1px solid var(--line-light);">
+    <div class="container nav-inner">
+      <a class="brand" href="/">
+        <img class="brand-mark brand-mark-light" src="assets/logo-mark-light.png" alt="Wisdom Technosoft Logo" width="320" height="260">
+        <span class="brand-name">Wisdom<span>Technosoft</span></span>
+      </a>
+      <a class="btn btn-nav" href="/#contact">Contact us <span aria-hidden="true">&#8599;</span></a>
+    </div>
+  </header>
+
+  <main class="error-main" id="error-content">
+    <div class="container">
+      <div class="error-card">
+        <p class="label label--light">Error 404</p>
+        <p class="error-code" aria-hidden="true">404</p>
+        <h1 class="error-head">Page <em>not found.</em></h1>
+        <p class="error-copy">
+          The page or resource you requested could not be located. It may have been moved, renamed, or is temporarily unavailable.
+        </p>
+
+        <div class="error-actions">
+          <a class="btn" href="/">Return to Homepage <span aria-hidden="true">&#8599;</span></a>
+          <a class="link-arrow" href="/#services">Explore services <span aria-hidden="true">&#8595;</span></a>
+          <a class="link-arrow" href="/#contact">Contact team <span aria-hidden="true">&#8595;</span></a>
+        </div>
+
+        <div class="error-support">
+          <div>Direct assistance: <a href="tel:+917447331127">+91 74473 31127</a></div>
+          <div>Email: <a href="mailto:wisdomtechnosoft04@gmail.com">wisdomtechnosoft04@gmail.com</a></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer" style="padding-top: 20px; background: var(--teal-deep);">
+    <div class="container">
+      <div class="footer-bottom" style="border-top: none;">
+        <p>&copy; 2026 Wisdom Technosoft. All rights reserved.</p>
+        <p><a href="/privacy.html">Privacy Notice</a></p>
+        <p>Nagpur, Maharashtra, India</p>
+        <a href="/">Back to home <span aria-hidden="true">&#8593;</span></a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

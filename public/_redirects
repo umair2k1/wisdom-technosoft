@@ -1,0 +1,22 @@
+# Cloudflare Pages Redirects Configuration
+# Documentation: https://developers.cloudflare.com/pages/configuration/redirects/
+
+# Section anchor shortcuts
+/services /#services 301
+/services/ /#services 301
+/about /#about 301
+/about/ /#about 301
+/contact /#contact 301
+/contact/ /#contact 301
+/contact-us /#contact 301
+/team /#team 301
+/team/ /#team 301
+/vision /#vision 301
+/vision/ /#vision 301
+/approach /#approach 301
+/approach/ /#approach 301
+
+# Privacy aliases
+/privacy /privacy.html 301
+/privacy-policy /privacy.html 301
+/privacy-policy/ /privacy.html 301

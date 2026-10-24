@@ -1,0 +1,20 @@
+{
+  "name": "wisdom-technosoft",
+  "version": "1.0.0",
+  "description": "Wisdom Technosoft corporate website, hosted on Cloudflare Pages",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "dev": "node serve.js",
+    "preview": "node build.js && node serve.js"
+  },
+  "keywords": [
+    "wisdom-technosoft",
+    "cloudflare-pages",
+    "static-site"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
