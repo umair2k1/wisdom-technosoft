@@ -34,7 +34,7 @@ This document tracks items that require confirmation, real client assets, or dom
 ---
 
 ## 5. Team & Leadership (Section 6.5 & Question 2)
-- [ ] **Bios & Real Titles:** Confirm official designations, exact name spellings, and headshots for the core team:
+- [ ] **Bios & Real Titles:** Confirm official designations, exact name spellings, and headshots for the core team. Stock workplace photos are currently used as placeholders (see `IMAGE_CREDITS.md`) and should be replaced with real team photography:
   - Mohammad Aashir (Managing Director)
   - Mohammad Faizan (Chief Executive Officer)
   - Mohd Arsh (Director)
