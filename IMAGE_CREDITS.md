@@ -13,5 +13,5 @@ The people and workplace photographs on the site are free stock images from
 
 Photographer: RDNE Stock project.
 
-**Note:** these are illustrative stock photographs, not portraits of the named
-leadership team. Replace them with real team photography when it is available.
+**Note:** these are illustrative stock photographs, not portraits of the team.
+Replace them with real team photography when it is available.
