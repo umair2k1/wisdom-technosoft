@@ -34,10 +34,10 @@ Official corporate marketing website for **Wisdom Technosoft Pvt Ltd** (Nagpur, 
    | **Build output directory** | `dist` |
    | **Root directory** | `/` |
 4. **Node Version Pinning:**
-   - The repository pins Node.js via `.nvmrc` (`20.18.0`).
+   - The repository pins Node.js via `.nvmrc` (`20.18.3`).
    - In Cloudflare Pages project settings, add the environment variable:
      - Variable name: `NODE_VERSION`
-     - Value: `20.18.0`
+     - Value: `20.18.3`
 5. **Branch Deployment Strategy:**
    - **Production branch:** `main` (automatically deploys to the live domain).
    - **Preview branches:** Every other branch / pull request generates an automatic, isolated preview URL (e.g. `<branch>.<project>.pages.dev`) for client review before merging.
@@ -55,7 +55,7 @@ Configure environment variables in the Cloudflare Dashboard under:
 | `DESTINATION_EMAIL` | Inbox where contact form submissions are delivered | `wisdomtechnosoft04@gmail.com` |
 | `WHATSAPP_NUMBER` | Official WhatsApp number (country code + 10 digits, no `+` or spaces) | `917447331127` |
 | `FORM_SERVICE_KEY` | Optional API key for email forwarding (e.g. [Web3Forms](https://web3forms.com)) | *(Optional string)* |
-| `NODE_VERSION` | Pinned Node version for reproducible Cloudflare CI builds | `20.18.0` |
+| `NODE_VERSION` | Pinned Node version for reproducible Cloudflare CI builds | `20.18.3` |
 
 > **Security Note:** Never commit secret keys or real `.env` files into Git. Use `.env.example` as the blueprint.
 
