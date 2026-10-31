@@ -115,7 +115,7 @@ html.js[data-loading]:not(.site-ready) {
  flex-direction: column;
  align-items: center;
  justify-content: center;
- gap: 1.6rem;
+ gap: 2.2rem;
  background: var(--ink);
  opacity: 1;
  visibility: visible;
@@ -132,18 +132,19 @@ html.site-ready .loader {
  pointer-events: none;
 }
 
-.loader-mark {
- width: 3.6rem;
- height: auto;
- opacity: 0.85;
+.loader .loader-mark {
+ width: auto;
+ height: clamp(5.2rem, 9vw, 7.5rem);
+ flex: none;
+ opacity: 0.92;
  animation: loader-pulse 1.8s ease-in-out infinite;
 }
 
 .loader-bar {
  position: relative;
  display: block;
- width: 6rem;
- height: 1px;
+ width: clamp(8rem, 12vw, 11rem);
+ height: 2px;
  overflow: hidden;
  background: var(--line);
 }
@@ -155,14 +156,6 @@ html.site-ready .loader {
  width: 40%;
  background: var(--tan);
  animation: loader-slide 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-}
-
-.loader-label {
- font: 500 0.68rem / 1 var(--sans);
- letter-spacing: 0.26em;
- text-transform: uppercase;
- color: var(--muted);
- opacity: 0.6;
 }
 
 @keyframes loader-pulse {
