@@ -1,0 +1,22 @@
+---
+import { team } from '../data/content.js';
+---
+
+<section id="team" class="team" data-hud-label="Team">
+  <div class="team-head" data-reveal>
+    <p class="kicker">Our team</p>
+    <h2 class="title big">The people behind the work.</h2>
+    <p class="desc">{team.lede}</p>
+  </div>
+
+  <ul class="team-list">
+    {
+      team.roles.map((member) => (
+        <li data-reveal>
+          <span class="role">{member.role}</span>
+          <span class="focus">{member.focus}</span>
+        </li>
+      ))
+    }
+  </ul>
+</section>

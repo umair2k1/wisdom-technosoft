@@ -1,0 +1,38 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Hud from '../components/Hud.astro';
+import Hero from '../components/Hero.astro';
+import Chapter from '../components/Chapter.astro';
+import Principles from '../components/Principles.astro';
+import Vision from '../components/Vision.astro';
+import Team from '../components/Team.astro';
+import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
+import { chapters } from '../data/content.js';
+---
+
+<Layout stage>
+  <Nav />
+  <Hud />
+
+  <main id="main-content">
+    <Hero />
+    {chapters.map((c, i) => <Chapter index={i + 1} c={c} />)}
+    <Principles />
+
+    <div class="finale" data-chapter="7" data-object="right" data-accent="#c9a27e">
+      <Vision />
+      <Team />
+      <Contact />
+    </div>
+  </main>
+
+  <Footer />
+
+  <script>
+    import '../scripts/stage.js';
+    import '../scripts/motion.js';
+    import '../scripts/form.js';
+  </script>
+</Layout>

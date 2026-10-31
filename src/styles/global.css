@@ -1,0 +1,1398 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Tokens
+   ============================================================ */
+:root {
+  --ink: #040405;
+  --ivory: #f4f0e8; /* brand ivory, matches the logo files */
+  --text: #b9b5ab;
+  --muted: #858a94;
+  --tan: #c9a27e;
+  --accent: #c9a27e; /* retinted per chapter by scripts/motion.js */
+  --logo-body: var(--ivory);
+  --logo-accent: #c9a27e; /* the logo's crown. Also read by the 3D emblem in scripts/stage.js */
+  --line: rgba(244, 240, 232, 0.16);
+  --serif: 'Instrument Serif', 'Times New Roman', serif;
+  --sans: 'Inter Tight', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --pad: clamp(1.25rem, 4.2vw, 4rem);
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+html {
+  background: var(--ink);
+  color: var(--ivory);
+  font-family: var(--sans);
+  -webkit-text-size-adjust: 100%;
+  overflow-x: clip; /* clip, not hidden: keeps position: sticky working */
+  color-scheme: dark;
+}
+
+html.menu-open {
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+main {
+  position: relative;
+  z-index: 2;
+}
+
+.skip {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  padding: 0.8rem 1.2rem;
+  border-radius: 999px;
+  background: var(--ivory);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: transform 0.25s;
+}
+
+.skip:focus {
+  transform: none;
+}
+
+/* ============================================================
+   Fixed layers: bgwords (z0) < 3D stage (z1) < vignette (z1) < page (z2)
+   ============================================================ */
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100vh;
+  height: 100lvh;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  pointer-events: none;
+}
+
+.stage.is-live {
+  opacity: 1;
+}
+
+.bgwords {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bgword {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  visibility: hidden;
+  overflow: hidden;
+  padding: 0 0 0.12em;
+  text-align: center;
+  white-space: nowrap;
+  user-select: none;
+  font: 400 clamp(8rem, 33vw, 38rem) / 0.82 var(--serif);
+  letter-spacing: -0.04em;
+  color: rgba(244, 240, 232, 0.075);
+}
+
+.vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 70% at 50% 46%, transparent 40%, rgba(4, 4, 5, 0.6) 100%);
+}
+
+/* ============================================================
+   Nav + menu
+   ============================================================ */
+.nav {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 4.5rem;
+  padding: 0 var(--pad);
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.nav::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 -2rem;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(4, 4, 5, 0.75), transparent);
+}
+
+.nav.is-hidden {
+  transform: translateY(-110%);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--ivory);
+}
+
+.brand-name {
+  font: 400 1.4rem / 1 var(--serif);
+  letter-spacing: -0.02em;
+}
+
+/* ---------- logo (inline SVG from src/data/logo.js) ---------- */
+.logo {
+  display: block;
+  width: auto;
+  height: 1em;
+  overflow: visible;
+}
+
+.logo-body {
+  fill: var(--logo-body);
+}
+
+.logo-accent {
+  fill: var(--logo-accent);
+  transition: fill 0.6s;
+}
+
+.brand .logo {
+  height: 1.9rem;
+  flex: none;
+}
+
+/* The nav crown follows the chapter accent. Delete this rule to pin it to --logo-accent. */
+.brand .logo-accent {
+  fill: var(--accent);
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.nav-cta {
+  display: none;
+  align-items: center;
+  min-height: 2.6rem;
+  padding: 0 1.3rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  transition: border-color 0.3s, background 0.3s, color 0.3s;
+}
+
+.nav-cta:hover {
+  background: var(--ivory);
+  border-color: var(--ivory);
+  color: var(--ink);
+}
+
+.menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-height: 2.6rem;
+  padding: 0 0.4rem 0 1rem;
+  cursor: pointer;
+  color: var(--ivory);
+  font: 500 0.72rem / 1 var(--sans);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.menu-bars {
+  position: relative;
+  display: block;
+  width: 1.6rem;
+  height: 0.6rem;
+}
+
+.menu-bars i {
+  position: absolute;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.4s;
+}
+
+.menu-bars i:first-child {
+  top: 0;
+}
+
+.menu-bars i:last-child {
+  top: 100%;
+}
+
+html.menu-open .menu-bars i:first-child {
+  top: 50%;
+  transform: rotate(45deg);
+}
+
+html.menu-open .menu-bars i:last-child {
+  top: 50%;
+  transform: rotate(-45deg);
+}
+
+@media (min-width: 768px) {
+  .nav-cta {
+    display: inline-flex;
+  }
+}
+
+.menu {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6rem var(--pad) 3rem;
+  background: rgba(4, 4, 5, 0.97);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s ease, visibility 0.5s;
+}
+
+html.menu-open .menu {
+  opacity: 1;
+  visibility: visible;
+}
+
+.menu-list a {
+  display: block;
+  padding: 0.12em 0;
+  font: 400 clamp(2.6rem, 8vw, 6rem) / 1.05 var(--serif);
+  letter-spacing: -0.03em;
+  transition: color 0.3s, transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.menu-list a:hover {
+  color: var(--tan);
+  transform: translateX(0.5rem);
+}
+
+.menu-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  margin-top: 2.5rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.menu-foot a:hover {
+  color: var(--ivory);
+}
+
+/* ============================================================
+   HUD
+   ============================================================ */
+.hud-count {
+  position: fixed;
+  left: var(--pad);
+  bottom: 1.25rem;
+  z-index: 40;
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  font: 500 0.7rem / 1 var(--sans);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.hud-count [data-hud-index] {
+  color: var(--accent);
+  transition: color 0.6s;
+}
+
+.hud-name {
+  margin-left: 1rem;
+  color: var(--ivory);
+}
+
+.hud-count,
+.hud-rail {
+  transition: opacity 0.4s ease;
+}
+
+.hud-off .hud-count,
+.hud-off .hud-rail {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hud-rail {
+  position: fixed;
+  right: 0.9rem;
+  top: 50%;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  transform: translateY(-50%);
+}
+
+.hud-tick {
+  display: block;
+  width: 10px;
+  height: 14px;
+  padding: 6px 0;
+  background: rgba(244, 240, 232, 0.3);
+  background-clip: content-box;
+  transition: width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.45s;
+}
+
+.hud-tick.is-active {
+  width: 22px;
+  background-color: var(--accent);
+}
+
+/* ============================================================
+   Shared type + buttons
+   ============================================================ */
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  font: 500 0.72rem / 1.3 var(--sans);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent);
+  transition: color 0.6s;
+}
+
+.kicker::before {
+  content: '';
+  flex: none;
+  width: 2.25rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+.title {
+  margin-top: 1.4rem;
+  font: 400 clamp(2.5rem, 5.2vw, 5rem) / 1.02 var(--serif);
+  letter-spacing: -0.03em;
+  color: var(--ivory);
+  text-wrap: balance;
+}
+
+.title.big {
+  font-size: clamp(2.6rem, 6.4vw, 6rem);
+}
+
+.desc {
+  max-width: 32rem;
+  margin-top: 1.4rem;
+  font-size: clamp(1rem, 1.25vw, 1.15rem);
+  line-height: 1.62;
+  color: var(--text);
+  text-wrap: pretty;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 1.8rem;
+  font: 500 0.72rem / 1.9 var(--sans);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tags li:not(:last-child)::after {
+  content: '/';
+  margin: 0 0.85em;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 3.1rem;
+  padding: 0 1.7rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--ivory);
+  color: var(--ink);
+  font: 500 0.95rem / 1 var(--sans);
+  cursor: pointer;
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.btn:hover {
+  background: var(--tan);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ivory);
+}
+
+.btn-ghost:hover {
+  background: transparent;
+  border-color: var(--ivory);
+}
+
+/* ============================================================
+   Scroll tracks: tall section + sticky stage
+   ============================================================ */
+.hero {
+  position: relative;
+  height: 230vh;
+}
+
+.chapter {
+  position: relative;
+  height: 300vh;
+}
+
+.pin {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  height: 100vh;
+  height: 100svh;
+  padding: 0 var(--pad);
+}
+
+.chapter[data-copy='right'] .pin {
+  justify-content: flex-end;
+}
+
+.copy {
+  position: relative;
+  width: 100%;
+  max-width: 35rem;
+}
+
+/* ---------- hero ---------- */
+.hero-inner {
+  width: 100%;
+  max-width: 82rem;
+  padding-top: 2rem;
+}
+
+.eyebrow {
+  margin-bottom: 2rem;
+  font: 500 0.75rem / 1.3 var(--sans);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.h1 {
+  margin: 0;
+  font: 400 clamp(3rem, min(11.2vw, 17vh), 11.5rem) / 0.9 var(--serif);
+  letter-spacing: -0.035em;
+}
+
+.h1 .row {
+  display: block;
+  overflow: hidden; /* mask for the intro; released by motion.js */
+  padding-bottom: 0.09em;
+  margin-bottom: -0.09em;
+}
+
+.h1 em {
+  color: var(--tan);
+  font-style: italic;
+}
+
+.char {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+.lede {
+  max-width: 34rem;
+  margin-top: 2.2rem;
+  font-size: clamp(1.02rem, 1.3vw, 1.2rem);
+  line-height: 1.6;
+  color: var(--text);
+  text-wrap: pretty;
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 2.2rem;
+}
+
+.scroll-cue {
+  position: absolute;
+  left: 50%;
+  bottom: 2.4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  transform: translateX(-50%);
+  font: 500 0.66rem / 1 var(--sans);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.scroll-cue i {
+  display: block;
+  width: 1px;
+  height: 2.8rem;
+  background: linear-gradient(to bottom, var(--ivory), transparent);
+  transform-origin: top;
+  animation: cue 2.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes cue {
+  0% {
+    transform: scaleY(0);
+    opacity: 1;
+  }
+  55% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 0;
+  }
+}
+
+/* ---------- principles ---------- */
+.principles {
+  position: relative;
+  height: 480vh;
+}
+
+.pin-p {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100svh;
+  padding: 0 var(--pad);
+}
+
+.p-head {
+  position: absolute;
+  left: var(--pad);
+  top: 7.5rem;
+  max-width: 24rem;
+}
+
+.p-lede {
+  margin-top: 1.1rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.p-bottom {
+  position: absolute;
+  left: var(--pad);
+  right: var(--pad);
+  bottom: 9vh;
+  max-width: 38rem;
+}
+
+.p-index {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.6rem;
+  margin-bottom: 1.6rem;
+  font: 500 0.72rem / 1.2 var(--sans);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.p-index li {
+  transition: color 0.5s;
+}
+
+.p-index li.is-active {
+  color: var(--accent);
+}
+
+.p-copy {
+  position: relative;
+  min-height: 15rem;
+}
+
+.p-item {
+  position: absolute;
+  inset: 0 0 auto 0;
+  opacity: 0;
+  transform: translateY(22px);
+  pointer-events: none;
+  transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.p-item.is-active {
+  opacity: 1;
+  transform: none;
+}
+
+.p-title {
+  font: 400 clamp(3rem, 8vw, 7.5rem) / 0.95 var(--serif);
+  letter-spacing: -0.035em;
+}
+
+.p-text {
+  max-width: 28rem;
+  margin-top: 1rem;
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
+  line-height: 1.55;
+  color: var(--text);
+}
+
+/* ---------- finale: vision / team / contact ---------- */
+.finale {
+  position: relative;
+  background: linear-gradient(
+    to bottom,
+    rgba(4, 4, 5, 0) 0,
+    rgba(4, 4, 5, 0) 18%,
+    rgba(4, 4, 5, 0.74) 60%,
+    rgba(4, 4, 5, 0.94) 100%
+  );
+}
+
+.vision {
+  position: relative;
+  height: 280vh;
+}
+
+.vision-in {
+  width: 100%;
+  max-width: 52rem;
+}
+
+.vision-text {
+  margin-top: 1.6rem;
+  font: 400 clamp(2rem, 4.6vw, 4.4rem) / 1.08 var(--serif);
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.mission {
+  max-width: 34rem;
+  margin-top: 2.6rem;
+}
+
+.mission p:last-child {
+  margin-top: 1rem;
+  line-height: 1.65;
+  color: var(--text);
+  font-size: clamp(1rem, 1.25vw, 1.15rem);
+}
+
+.team {
+  padding: 22vh var(--pad) 12vh;
+}
+
+.team-head {
+  max-width: 38rem;
+}
+
+.team-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 84rem;
+  margin-top: 4rem;
+  border-top: 1px solid var(--line);
+}
+
+.team-list li {
+  display: grid;
+  gap: 0.7rem;
+  padding: 2.2rem 1.5rem 2.2rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.role {
+  font: 400 clamp(1.8rem, 3vw, 2.8rem) / 1.05 var(--serif);
+  letter-spacing: -0.02em;
+}
+
+.focus {
+  font: 500 0.72rem / 1.4 var(--sans);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.contact {
+  padding: 14vh var(--pad) 16vh;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(2.5rem, 7vw, 7rem);
+  max-width: 84rem;
+  margin: 0 auto;
+}
+
+.direct {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 2.4rem;
+}
+
+.direct dt {
+  font: 500 0.7rem / 1 var(--sans);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.direct dd {
+  max-width: 22rem;
+  margin: 0.55rem 0 0;
+  font-size: 1.08rem;
+  line-height: 1.5;
+}
+
+.direct a {
+  transition: color 0.3s;
+}
+
+.direct a:hover {
+  color: var(--accent);
+}
+
+.btn-wa {
+  margin-top: 2.2rem;
+  background: #3ecf8e;
+  color: #04140c;
+}
+
+.btn-wa:hover {
+  background: #5ce0a4;
+}
+
+/* ---------- form ---------- */
+.field {
+  display: block;
+  margin-top: 1.6rem;
+}
+
+.field:first-of-type {
+  margin-top: 0;
+}
+
+.field > span {
+  display: block;
+  font: 500 0.7rem / 1 var(--sans);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.field input,
+.field select,
+.field textarea {
+  display: block;
+  width: 100%;
+  padding: 0.85rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ivory);
+  font: 400 1.15rem / 1.4 var(--sans);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: #6c717b;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 1px 0 var(--accent);
+}
+
+.field select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 1.6rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%23858a94' stroke-width='1.5'%3E%3Cpath d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.2rem center;
+}
+
+.field select option {
+  background: #0b0c0f;
+  color: #f1ece2;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 7rem;
+}
+
+.form .btn {
+  width: 100%;
+  margin-top: 2.2rem;
+}
+
+.hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.status {
+  margin-top: 1.4rem;
+  padding: 1rem 1.2rem;
+  border-left: 2px solid;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.status[hidden],
+.fallback[hidden] {
+  display: none;
+}
+
+.status-ok {
+  border-color: #3ecf8e;
+  background: rgba(62, 207, 142, 0.08);
+  color: #7fe6b5;
+}
+
+.status-err {
+  border-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.08);
+  color: #ffb3b3;
+}
+
+.fallback {
+  margin-top: 1.4rem;
+  padding: 1.2rem;
+  border: 1px solid var(--line);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.fallback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.fallback .btn {
+  width: auto;
+  margin-top: 0;
+  min-height: 2.7rem;
+  font-size: 0.88rem;
+}
+
+.fine {
+  margin-top: 1.4rem;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.fine a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.fine a:hover {
+  color: var(--ivory);
+}
+
+/* ---------- footer ---------- */
+.footer {
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  padding: 5rem var(--pad) 2rem;
+  border-top: 1px solid var(--line);
+  background: var(--ink);
+}
+
+.footer-ghost {
+  position: absolute;
+  z-index: 0;
+  right: -3vw;
+  bottom: -3rem;
+  width: min(46vw, 40rem);
+  height: auto;
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+.footer-ghost .logo-accent {
+  fill: var(--logo-body);
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.footer-mark {
+  flex: none;
+  height: 1.4rem;
+}
+
+.wordmark {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 0 -0.04em;
+  white-space: nowrap;
+  font: 400 clamp(2.2rem, 12.4vw, 15rem) / 0.85 var(--serif);
+  letter-spacing: -0.045em;
+}
+
+.wordmark em {
+  color: var(--tan);
+}
+
+.footer-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.8rem 2rem;
+  margin-top: 3rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.footer-row a {
+  transition: color 0.3s;
+}
+
+.footer-row a:hover {
+  color: var(--ivory);
+}
+
+/* ---------- document pages (privacy) ---------- */
+.doc {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 9.5rem var(--pad) 6rem;
+}
+
+.doc h1 {
+  margin-top: 1.4rem;
+  font: 400 clamp(2.8rem, 7vw, 5.5rem) / 1 var(--serif);
+  letter-spacing: -0.035em;
+}
+
+.doc h2 {
+  margin-top: 3.2rem;
+  font: 400 1.9rem / 1.15 var(--serif);
+  letter-spacing: -0.02em;
+}
+
+.doc p,
+.doc li {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.doc p {
+  margin-top: 1rem;
+}
+
+.doc ul {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1.2rem;
+}
+
+.doc li {
+  display: flex;
+  gap: 0.9rem;
+}
+
+.doc li::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 0.7em;
+  border-radius: 99px;
+  background: var(--accent);
+}
+
+.doc a:not(.btn) {
+  color: var(--ivory);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 4px;
+}
+
+.doc a:not(.btn):hover {
+  text-decoration-color: var(--accent);
+}
+
+.doc .lead {
+  font-size: 1.2rem;
+}
+
+.doc .doc-actions {
+  margin-top: 2rem;
+}
+
+.doc-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+/* ============================================================
+   Small screens: object up top, copy at the bottom
+   ============================================================ */
+@media (max-width: 900px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hud-rail {
+    display: none;
+  }
+}
+
+@media (max-width: 767px), (max-aspect-ratio: 9/10) {
+  .hero {
+    height: 200vh;
+  }
+
+  .chapter {
+    height: 270vh;
+  }
+
+  .vision {
+    height: 240vh;
+  }
+
+  .pin {
+    align-items: flex-end;
+    padding-bottom: 7svh;
+  }
+
+  .hero-inner {
+    padding-top: 0;
+  }
+
+  .title {
+    font-size: clamp(2rem, 8.6vw, 3.6rem);
+  }
+
+  .desc {
+    margin-top: 1rem;
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .tags {
+    margin-top: 1.1rem;
+    font-size: 0.68rem;
+  }
+
+  .p-lede {
+    display: none;
+  }
+
+  .scroll-cue {
+    display: none;
+  }
+
+  .copy {
+    max-width: none;
+  }
+
+  .copy::before {
+    content: '';
+    position: absolute;
+    inset: -7rem -1.25rem -7svh;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(to top, rgba(4, 4, 5, 0.94) 55%, rgba(4, 4, 5, 0));
+  }
+
+  .p-head {
+    top: 6rem;
+  }
+
+  .p-bottom {
+    bottom: 6svh;
+  }
+
+  .p-copy {
+    min-height: 13rem;
+  }
+
+  .team-list {
+    grid-template-columns: 1fr;
+  }
+
+  .hud-rail,
+  .hud-name {
+    display: none;
+  }
+}
+
+/* ============================================================
+   Short landscape screens
+   ============================================================ */
+@media (max-height: 560px) and (min-aspect-ratio: 9/10) {
+  .nav {
+    height: 3.6rem;
+  }
+
+  .hero-inner {
+    padding-top: 3rem;
+  }
+
+  .eyebrow {
+    margin-bottom: 0.8rem;
+  }
+
+  .lede {
+    margin-top: 1rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .cta-row {
+    margin-top: 1rem;
+  }
+
+  .btn {
+    min-height: 2.6rem;
+  }
+
+  .title {
+    margin-top: 0.8rem;
+    font-size: clamp(1.8rem, 8vh, 2.8rem);
+  }
+
+  .desc {
+    margin-top: 0.8rem;
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .tags {
+    margin-top: 1rem;
+  }
+
+  .p-title {
+    font-size: clamp(2.4rem, 16vh, 4.5rem);
+  }
+
+  .vision-text {
+    font-size: clamp(1.5rem, 7vh, 2.6rem);
+  }
+}
+
+/* ============================================================
+   Anti-flash: with JS on, animated elements start hidden and motion.js
+   releases them (html.is-ready). If scripts fail they show after 3.5s.
+   ============================================================ */
+@keyframes pre-show {
+  to {
+    visibility: visible;
+  }
+}
+
+html.js:not(.no-stage):not(.is-ready)
+  :is(.hero .h1, [data-hero-in], [data-r], [data-reveal], .vision-text, .mission, [data-p-head], [data-p-bottom]) {
+  visibility: hidden;
+  animation: pre-show 0s 3.5s forwards;
+}
+
+/* ============================================================
+   No WebGL / reduced motion / no JavaScript: plain, readable page
+   ============================================================ */
+:is(html.no-stage, html:not(.js)) .stage,
+:is(html.no-stage, html:not(.js)) .bgwords,
+:is(html.no-stage, html:not(.js)) .vignette,
+:is(html.no-stage, html:not(.js)) .hud-count,
+:is(html.no-stage, html:not(.js)) .hud-rail,
+:is(html.no-stage, html:not(.js)) .scroll-cue {
+  display: none;
+}
+
+:is(html.no-stage, html:not(.js)) body {
+  background: radial-gradient(ellipse 70% 50% at 70% 8%, rgba(201, 162, 126, 0.16), transparent 70%), var(--ink);
+}
+
+:is(html.no-stage, html:not(.js)) .hero,
+:is(html.no-stage, html:not(.js)) .chapter,
+:is(html.no-stage, html:not(.js)) .principles,
+:is(html.no-stage, html:not(.js)) .vision {
+  height: auto;
+}
+
+:is(html.no-stage, html:not(.js)) .pin,
+:is(html.no-stage, html:not(.js)) .pin-p {
+  position: relative;
+  height: auto;
+  min-height: 100vh;
+  padding-top: 8rem;
+  padding-bottom: 5rem;
+}
+
+:is(html.no-stage, html:not(.js)) .vision .pin {
+  min-height: 70vh;
+}
+
+:is(html.no-stage, html:not(.js)) .pin-p {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+:is(html.no-stage, html:not(.js)) .p-head,
+:is(html.no-stage, html:not(.js)) .p-bottom {
+  position: static;
+  max-width: 40rem;
+}
+
+:is(html.no-stage, html:not(.js)) .p-copy {
+  display: grid;
+  gap: 2rem;
+  min-height: 0;
+}
+
+:is(html.no-stage, html:not(.js)) .p-item {
+  position: static;
+  opacity: 1;
+  transform: none;
+}
+
+:is(html.no-stage, html:not(.js)) .p-index {
+  display: none;
+}
+
+:is(html.no-stage, html:not(.js)) .copy::before {
+  display: none;
+}
+
+/* The brand mark stands in for the 3D emblem on the plain page. */
+.hero-mark {
+  display: none;
+}
+
+:is(html.no-stage, html:not(.js)) .hero-mark {
+  display: block;
+  position: absolute;
+  right: var(--pad);
+  top: 50%;
+  width: min(36vw, 28rem);
+  height: auto;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+@media (max-width: 767px), (max-aspect-ratio: 9/10) {
+  :is(html.no-stage, html:not(.js)) .hero .pin {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  :is(html.no-stage, html:not(.js)) .hero-mark {
+    position: static;
+    width: min(46vw, 12rem);
+    margin-bottom: 2rem;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .scroll-cue i {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.001ms !important;
+  }
+}

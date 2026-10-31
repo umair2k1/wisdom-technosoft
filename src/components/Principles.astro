@@ -1,0 +1,42 @@
+---
+import { principles, principlesIntro } from '../data/content.js';
+---
+
+<section
+  id="approach"
+  class="principles"
+  data-chapter="6"
+  data-object="right"
+  data-accent="#f1ece2"
+  data-hud-label="Principles"
+  data-principles
+>
+  <div class="pin-p">
+    <div class="p-head" data-p-head>
+      <h2 class="kicker">How we work</h2>
+      <p class="p-lede">{principlesIntro}</p>
+    </div>
+
+    <div class="p-bottom" data-p-bottom data-skew>
+      <ol class="p-index" aria-hidden="true">
+        {
+          principles.map((p, i) => (
+            <li data-p-idx>
+              {String(i + 1).padStart(2, '0')} {p.title}
+            </li>
+          ))
+        }
+      </ol>
+      <div class="p-copy">
+        {
+          principles.map((p) => (
+            <article class="p-item" data-p-item>
+              <h3 class="p-title">{p.title}</h3>
+              <p class="p-text">{p.text}</p>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>

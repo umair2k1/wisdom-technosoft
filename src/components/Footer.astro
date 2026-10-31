@@ -1,0 +1,25 @@
+---
+import Logo from './Logo.astro';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <Logo class="footer-ghost" />
+
+  <p class="wordmark" aria-hidden="true">Wisdom <em>Technosoft</em></p>
+
+  <div class="footer-row">
+    <p class="footer-brand">
+      <Logo class="footer-mark" />
+      <span>© {year} Wisdom Technosoft. Software. Telecalling. Data. Done with care.</span>
+    </p>
+    <p>
+      <a href="/privacy">Privacy notice</a>
+      <span aria-hidden="true"> · </span>
+      Nagpur, Maharashtra, India
+      <span aria-hidden="true"> · </span>
+      <a href="#top">Back to top ↑</a>
+    </p>
+  </div>
+</footer>

@@ -1,0 +1,113 @@
+---
+import { contact, services } from '../data/content.js';
+import { site } from '../data/site.js';
+---
+
+<section id="contact" class="contact" data-hud-label="Contact">
+  <div class="contact-grid">
+    <div data-reveal>
+      <p class="kicker">Contact</p>
+      <h2 class="title big">{contact.title}</h2>
+      <p class="desc">{contact.lede}</p>
+
+      <dl class="direct">
+        <div>
+          <dt>Email</dt>
+          <dd class="break-all"><a href={`mailto:${site.email}`}>{site.email}</a></dd>
+        </div>
+        <div>
+          <dt>Phone</dt>
+          <dd><a href={site.phoneHref}>{site.phone}</a></dd>
+        </div>
+        <div>
+          <dt>Location</dt>
+          <dd>
+            <a href={site.mapsUrl} target="_blank" rel="noopener noreferrer">{site.address}</a>
+          </dd>
+        </div>
+      </dl>
+
+      <a href={site.whatsappUrl} target="_blank" rel="noopener noreferrer" class="btn btn-wa">
+        Chat on WhatsApp <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+
+    <form data-contact-form class="form" novalidate data-reveal>
+      <input type="text" name="website_url" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true" />
+
+      <label class="field">
+        <span>Name</span>
+        <input name="name" type="text" required autocomplete="name" maxlength="120" placeholder="Your name" />
+      </label>
+
+      <label class="field">
+        <span>Email address</span>
+        <input
+          name="email"
+          type="email"
+          required
+          autocomplete="email"
+          maxlength="160"
+          placeholder="you@company.com"
+        />
+      </label>
+
+      <label class="field">
+        <span>Phone / WhatsApp</span>
+        <input name="phone" type="tel" autocomplete="tel" maxlength="40" placeholder="Optional" />
+      </label>
+
+      <label class="field">
+        <span>Service</span>
+        <select name="service" required>
+          <option value="" disabled selected>Select a service</option>
+          {services.map((service) => <option value={service}>{service}</option>)}
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Project overview</span>
+        <textarea
+          name="message"
+          required
+          minlength="5"
+          maxlength="3000"
+          rows="5"
+          placeholder="What do you need built, fixed or run?"></textarea>
+      </label>
+
+      <button type="submit" class="btn"><span data-submit-label>Send inquiry</span></button>
+
+      <noscript>
+        <p class="status status-err">
+          The form needs JavaScript. Please email <a href={`mailto:${site.email}`}>{site.email}</a> instead.
+        </p>
+      </noscript>
+
+      <p class="status status-ok" data-form-success role="status" aria-live="polite" hidden></p>
+      <p class="status status-err" data-form-error role="alert" hidden></p>
+
+      <div class="fallback" data-form-fallback hidden>
+        <p>
+          The automatic form service isn’t available on this deployment. Send the same details straight to our inbox
+          instead; nothing is lost.
+        </p>
+        <div class="fallback-actions">
+          <a data-fallback-mail href={`mailto:${site.email}`} class="btn">Email the details</a>
+          <a
+            data-fallback-whatsapp
+            href={site.whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-ghost">WhatsApp instead</a
+          >
+        </div>
+      </div>
+
+      <p class="fine">
+        No tracking cookies. Your details are used only to reply to this inquiry.
+        <a href="/privacy">Privacy notice</a>
+      </p>
+    </form>
+  </div>
+</section>

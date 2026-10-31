@@ -1,0 +1,62 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import { site } from '../data/site.js';
+
+const description =
+  'How Wisdom Technosoft handles inquiry data: no tracking cookies, no third-party tracking scripts, and no selling or sharing of lead data.';
+---
+
+<Layout title="Privacy Notice — Wisdom Technosoft" description={description}>
+  <Nav />
+
+  <main id="main-content" class="doc">
+    <p class="kicker">Privacy</p>
+    <h1>Privacy notice</h1>
+    <p class="lead">
+      Wisdom Technosoft Pvt Ltd keeps this website deliberately simple. We do not profile visitors, and we only ask for
+      the details we need to answer your inquiry.
+    </p>
+
+    <h2>Our commitments</h2>
+    <ul>
+      <li>No advertising or tracking cookies.</li>
+      <li>No third-party tracking scripts. We do not load Google Analytics, Meta Pixel or similar tools.</li>
+      <li>No selling or sharing of lead data.</li>
+      <li>Contact data is retained strictly for inquiry resolution and project statutory requirements.</li>
+    </ul>
+
+    <h2>What we collect</h2>
+    <p>
+      If you send an inquiry, we receive the name, email address, optional phone or WhatsApp number, selected service
+      and project overview that you choose to provide. Nothing else is collected by this website, and no analytics
+      profiles are built from your visit.
+    </p>
+
+    <h2>How your details are used</h2>
+    <p>
+      Your details are used to reply to your inquiry, understand the scope of the work you are asking about, and meet
+      the record-keeping requirements that apply to a project. They are not used for advertising, and they are not sold
+      or shared with third parties for their own purposes.
+    </p>
+    <p>
+      When the automated form endpoint is unavailable, the same details are handed to your email client or WhatsApp so
+      you can send them to us directly. That hand-off happens on your device, under your control.
+    </p>
+
+    <h2>Retention and your choices</h2>
+    <p>
+      Inquiry data is kept only as long as needed to resolve the inquiry and, where a project proceeds, for the
+      statutory period that applies to that work. You can ask us to correct or delete your inquiry details by writing to
+      the email address below.
+    </p>
+
+    <h2>Contact</h2>
+    <p>{site.address}, India</p>
+    <p><a href={`mailto:${site.email}`} class="break-all">{site.email}</a></p>
+    <p><a href={site.phoneHref}>{site.phone}</a></p>
+  </main>
+
+  <Footer />
+</Layout>

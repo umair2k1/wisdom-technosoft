@@ -1,0 +1,130 @@
+---
+import '../styles/global.css';
+import { chapters } from '../data/content.js';
+import { site } from '../data/site.js';
+
+interface Props {
+  title?: string;
+  description?: string;
+  stage?: boolean;
+  noindex?: boolean;
+}
+
+const {
+  title = 'Wisdom Technosoft — Software. Conversations. Clean data.',
+  description = 'Wisdom Technosoft is a Nagpur studio. We build software, run customer calls, keep records clean and handle the operations work around them — one team, one standard.',
+  stage = false,
+  noindex = false,
+} = Astro.props;
+
+const origin = Astro.site ?? Astro.url;
+const canonical = new URL(Astro.url.pathname, origin).href;
+const image = new URL('/favicon.png', origin).href;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: site.name,
+  url: new URL('/', origin).href,
+  logo: image,
+  email: site.email,
+  telephone: site.phoneIntl,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: site.street,
+    addressLocality: site.city,
+    addressRegion: site.region,
+    postalCode: site.postcode,
+    addressCountry: 'IN',
+  },
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="color-scheme" content="dark" />
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#040405" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Wisdom Technosoft" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content="en_IN" />
+    <meta property="og:image" content={image} />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    {!noindex && <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />}
+
+    <!-- Decided before first paint. No WebGL, reduced motion, Save-Data or a very
+         low-memory device = the plain, readable page instead of the 3D experience. -->
+    <script is:inline>
+      (function () {
+        var d = document.documentElement;
+        d.classList.add('js');
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var gl = false;
+        try {
+          var c = document.createElement('canvas');
+          var ctx = c.getContext('webgl2') || c.getContext('webgl');
+          gl = !!ctx;
+          var lose = ctx && ctx.getExtension && ctx.getExtension('WEBGL_lose_context');
+          if (lose) lose.loseContext();
+        } catch (e) {}
+        var conn = navigator.connection;
+        var lean = !!(
+          (conn && (conn.saveData || /(^|-)2g$/.test(conn.effectiveType || ''))) ||
+          (navigator.deviceMemory && navigator.deviceMemory <= 2)
+        );
+        if (reduce) d.classList.add('no-motion');
+        if (reduce || !gl || lean) d.classList.add('no-stage');
+      })();
+    </script>
+  </head>
+  <body id="top">
+    <a href="#main-content" class="skip">Skip to content</a>
+
+    {
+      stage && (
+        <>
+          <div class="bgwords" aria-hidden="true">
+            {chapters.map((c, i) => (
+              <div class="bgword" data-bgword={i + 1}>
+                {c.word}
+              </div>
+            ))}
+          </div>
+          <canvas id="stage" class="stage" aria-hidden="true" />
+          <div class="vignette" aria-hidden="true" />
+        </>
+      )
+    }
+
+    <slot />
+  </body>
+</html>

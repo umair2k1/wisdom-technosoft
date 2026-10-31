@@ -1,0 +1,26 @@
+---
+/* One service = one station in the 3D world. index 1..5 matches data-chapter. */
+const { index, c } = Astro.props;
+const objectSide = c.copy === 'right' ? 'left' : 'right';
+---
+
+<section
+  id={c.key}
+  class="chapter"
+  data-chapter={index}
+  data-copy={c.copy}
+  data-object={objectSide}
+  data-accent={c.accent}
+  data-hud-label={c.hud}
+>
+  <div class="pin">
+    <div class="copy" data-skew>
+      <p class="kicker" data-r>{c.label}</p>
+      <h2 class="title" data-r>{c.title}</h2>
+      <p class="desc" data-r>{c.body}</p>
+      <ul class="tags" data-r>
+        {c.tags.map((tag) => <li>{tag}</li>)}
+      </ul>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>Wisdom Technosoft</title>
+  <rect width="512" height="512" rx="108" fill="#050608"/>
+  <g transform="translate(71.9 107.0) scale(0.409)">
+    <path fill="#c9a27e" d="M161.4 125.4L254 4.6L648.2 4.6L740.8 125.4L488.4 125.4L528.5 177.6L450.3 274.4L336.3 125.4Z"/>
+    <path fill="#f4f0e8" d="M854.9 405.2L610 724.2L545.8 724.2L236.2 324.4L7.5 324.4L100.2 203.3L294.3 203.3L577.4 568.7L702.9 405.2Z"/>
+    <path fill="#f4f0e8" d="M501 339.1L605.4 203.3L800.1 203.3L892.9 324.4L664.4 324.4L577.3 437.7Z"/>
+    <path fill="#f4f0e8" d="M443.7 724.2L291.6 724.2L46.6 405.2L198.6 405.2Z"/>
+  </g>
+</svg>

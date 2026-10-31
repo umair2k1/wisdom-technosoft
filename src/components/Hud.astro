@@ -1,0 +1,24 @@
+---
+/* Chapter counter (bottom-left) and rail (right edge). Updated by scripts/motion.js. */
+const stops = [
+  { href: '#top', label: 'Intro' },
+  { href: '#software', label: 'Software' },
+  { href: '#telecalling', label: 'Telecalling' },
+  { href: '#data', label: 'Data' },
+  { href: '#operations', label: 'Operations' },
+  { href: '#healthcare', label: 'Healthcare' },
+  { href: '#approach', label: 'Principles' },
+  { href: '#vision', label: 'Vision' },
+];
+---
+
+<p class="hud-count" aria-hidden="true">
+  <span data-hud-index>01</span><span>/ 08</span><span class="hud-name" data-hud-name>Intro</span>
+</p>
+<nav class="hud-rail" aria-label="Sections">
+  {
+    stops.map((stop) => (
+      <a href={stop.href} class="hud-tick" data-hud-tick aria-label={`Go to ${stop.label}`} title={stop.label} />
+    ))
+  }
+</nav>

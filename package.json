@@ -1,20 +1,27 @@
 {
   "name": "wisdom-technosoft",
-  "version": "1.0.0",
-  "description": "Wisdom Technosoft corporate website, hosted on Cloudflare Pages",
+  "description": "Marketing site for Wisdom Technosoft",
   "private": true,
   "type": "module",
-  "scripts": {
-    "build": "node build.js",
-    "dev": "node serve.js",
-    "preview": "node build.js && node serve.js"
-  },
-  "keywords": [
-    "wisdom-technosoft",
-    "cloudflare-pages",
-    "static-site"
-  ],
+  "version": "3.1.0",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=18.17.1"
+  },
+  "scripts": {
+    "dev": "node ./node_modules/astro/astro.js dev",
+    "start": "node ./node_modules/astro/astro.js dev",
+    "build": "node ./node_modules/astro/astro.js build",
+    "preview": "node ./node_modules/astro/astro.js preview"
+  },
+  "dependencies": {
+    "@astrojs/tailwind": "^5.1.0",
+    "astro": "^4.15.0",
+    "gsap": "^3.12.5",
+    "tailwindcss": "^3.4.10",
+    "three": "^0.168.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.168.0",
+    "typescript": "^5.5.4"
   }
 }

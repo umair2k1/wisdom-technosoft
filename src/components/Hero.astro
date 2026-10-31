@@ -1,0 +1,39 @@
+---
+import Logo from './Logo.astro';
+import { hero } from '../data/content.js';
+---
+
+<section
+  id="intro"
+  class="hero"
+  data-chapter="0"
+  data-object="right"
+  data-accent="#c9a27e"
+  data-hud-label="Intro"
+>
+  <div class="pin">
+    <Logo class="hero-mark" />
+
+    <div class="hero-inner" data-skew>
+      <p class="eyebrow" data-hero-in>{hero.eyebrow}</p>
+
+      <h1 class="h1" aria-label="Software. Conversations. Clean data.">
+        <span class="row"><span data-split>Software.</span></span>
+        <span class="row"><span data-split>Conversations.</span></span>
+        <span class="row"><em data-split>Clean data.</em></span>
+      </h1>
+
+      <p class="lede" data-hero-in>{hero.lede}</p>
+
+      <div class="cta-row" data-hero-in>
+        <a href="#contact" class="btn">Start a project</a>
+        <a href="#software" class="btn btn-ghost">See what we do <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+
+    <a href="#software" class="scroll-cue" data-scroll-cue aria-label="Scroll to what we do">
+      <span>Scroll</span>
+      <i aria-hidden="true"></i>
+    </a>
+  </div>
+</section>

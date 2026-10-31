@@ -1,0 +1,24 @@
+---
+/* The brand mark as inline SVG, drawn from src/data/logo.js.
+   Colours come from CSS (.logo-body / .logo-accent in global.css). */
+import { LOGO } from '../data/logo.js';
+
+interface Props {
+  class?: string;
+  title?: string;
+}
+
+const { class: className = '', title } = Astro.props;
+const d = (points: number[][]) => 'M' + points.map(([x, y]) => `${x} ${y}`).join('L') + 'Z';
+---
+
+<svg
+  class:list={['logo', className]}
+  viewBox={LOGO.viewBox}
+  role={title ? 'img' : undefined}
+  aria-label={title}
+  aria-hidden={title ? undefined : 'true'}
+  focusable="false"
+>
+  {LOGO.pieces.map((piece) => <path class={piece.accent ? 'logo-accent' : 'logo-body'} d={d(piece.points)} />)}
+</svg>
