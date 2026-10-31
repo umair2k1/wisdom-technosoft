@@ -379,26 +379,29 @@ export function start(canvas) {
   addHalo(group, 0x2b7bff, 9, 0.28, -2);
 
   const dummy = new THREE.Object3D();
-  let lastU = NaN;
+  const applyLayout = (progress) => {
+   for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const p = clamp((progress * 1.25 - it.delay * 0.55) / 0.5);
+    const e = p * p * (3 - 2 * p);
+    dummy.position.lerpVectors(it.start, it.end, e);
+    dummy.rotation.set(it.rot.x * (1 - e), it.rot.y * (1 - e), it.rot.z * (1 - e));
+    dummy.scale.lerpVectors(it.s0, it.s1, e);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(i, dummy.matrix);
+   }
+   mesh.instanceMatrix.needsUpdate = true;
+  };
+  applyLayout(0);
+
+  let lastU = 0;
   return {
    group,
    base: 1,
    update(u, t) {
-    /* The block layout is a pure function of scroll progress. Skip the matrix
-       rebuild and the 107-instance upload while the page is not scrolling. */
     if (Math.abs(u - lastU) > 1e-5) {
      lastU = u;
-     for (let i = 0; i < items.length; i++) {
-      const it = items[i];
-      const p = clamp((u * 1.25 - it.delay * 0.55) / 0.5);
-      const e = p * p * (3 - 2 * p);
-      dummy.position.lerpVectors(it.start, it.end, e);
-      dummy.rotation.set(it.rot.x * (1 - e), it.rot.y * (1 - e), it.rot.z * (1 - e));
-      dummy.scale.lerpVectors(it.s0, it.s1, e);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-     }
-     mesh.instanceMatrix.needsUpdate = true;
+     applyLayout(u);
     }
     group.rotation.set(0.42, -0.5 + u * 1.1 + Math.sin(t * 0.2) * 0.05, 0);
    },
