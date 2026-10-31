@@ -1,7 +1,7 @@
 /* ------------------------------------------------------------------
    Scroll choreography (GSAP + ScrollTrigger).
    The 3D camera lives in world.js and reads scrollY directly; this file
-   handles everything in the DOM: the hero letters, each chapter's giant
+   handles everything in the DOM: the hero lines, each chapter's giant
    background word and copy, the HUD, principles, vision and anchor flights.
 
    Content is visible by default. With JS on, animated elements are hidden by
@@ -21,7 +21,7 @@ const $ = (selector, ctx = document) => Array.from(ctx.querySelectorAll(selector
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 /* Anchor links fly instead of jump; the 3D camera follows the scroll.
-   Longer trips take longer, so the flight never turns into a blur. */
+   Uses cached offsetTop instead of getBoundingClientRect() to avoid synchronous reflows. */
 document.addEventListener('click', (event) => {
  const link = event.target.closest && event.target.closest('a[href^="#"]');
  if (!link) return;
@@ -30,7 +30,7 @@ document.addEventListener('click', (event) => {
  const target = document.querySelector(hash);
  if (!target) return;
  event.preventDefault();
- const distance = Math.abs(target.getBoundingClientRect().top);
+ const distance = Math.abs(target.offsetTop - (window.scrollY || 0));
  gsap.to(window, {
   duration: still ? 0 : clamp(distance / (window.innerHeight * 6), 1, 3.6),
   scrollTo: { y: target, autoKill: true },
@@ -92,43 +92,37 @@ if (!still) {
 }
 
 function init() {
- /* ---------- hero: letters rise in once the fonts are in, then scatter on scroll ---------- */
+ /* ---------- hero: lines rise in once fonts are in, then glide on scroll ---------- */
  const hero = document.querySelector('.hero');
  if (hero) {
-  const rows = $('.row', hero);
-  const chars = $('[data-split]', hero).flatMap(splitChars);
+  const rows = $('[data-hero-row]', hero);
   const intro = $('[data-hero-in]', hero);
 
-  gsap.set(chars, { yPercent: 108, opacity: 0 });
-  gsap.set(intro, { y: 26, opacity: 0 });
+  gsap.set(rows, { yPercent: 100, opacity: 0 });
+  gsap.set(intro, { y: 20, opacity: 0 });
+
+  const finishHero = () => {
+   rows.forEach((row) => (row.style.overflow = 'visible'));
+   window.dispatchEvent(new Event('wt:hero-ready'));
+  };
 
   const entrance = gsap
-   .timeline({ paused: true, defaults: { ease: 'power3.out' } })
-   .to(chars, { yPercent: 0, opacity: 1, duration: 1.05, stagger: 0.018, force3D: true }, 0)
-   .to(intro, { y: 0, opacity: 1, duration: 0.85, stagger: 0.08, force3D: true }, 0.45)
-   .add(() => rows.forEach((row) => (row.style.overflow = 'visible')));
+   .timeline({
+    paused: true,
+    defaults: { ease: 'power3.out' },
+    onComplete: finishHero,
+   })
+   .to(rows, { yPercent: 0, opacity: 1, duration: 0.65, stagger: 0.08, force3D: true }, 0)
+   .to(intro, { y: 0, opacity: 1, duration: 0.55, stagger: 0.06, force3D: true }, 0.25);
 
-  /* Wait for the web fonts (max 1.2s) so the letters never swap typeface mid-rise. */
   const fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-  Promise.race([fontsReady, new Promise((resolve) => setTimeout(resolve, 1200))]).then(() => {
+  Promise.race([fontsReady, new Promise((resolve) => setTimeout(resolve, 800))]).then(() => {
    requestAnimationFrame(() => entrance.play());
   });
 
   const tl = track(hero, 0.8);
-  chars.forEach((c, i) => {
-   tl.to(
-    c,
-    {
-     x: gsap.utils.random(-280, 280),
-     y: gsap.utils.random(-240, 180),
-     rotate: gsap.utils.random(-80, 80),
-     opacity: 0,
-     duration: 0.4,
-    },
-    0.1 + (i % 9) * 0.018,
-   );
-  });
-  tl.to(intro, { y: -50, opacity: 0, duration: 0.22, stagger: 0.03 }, 0.06)
+  tl.to(rows, { yPercent: -80, opacity: 0, duration: 0.35, stagger: 0.04, force3D: true }, 0.05)
+   .to(intro, { y: -50, opacity: 0, duration: 0.22, stagger: 0.03, force3D: true }, 0.06)
    .to('[data-scroll-cue]', { opacity: 0, duration: 0.08 }, 0)
    .set({}, {}, 1);
  }
@@ -213,7 +207,7 @@ function init() {
   });
  });
 
- /* ---------- HUD: counter, rail and accent colour follow the active chapter ---------- */
+ /* ---------- HUD: counter, rail and accent colour follow active chapter ---------- */
  const chapters = $('[data-chapter]');
  const indexEl = document.querySelector('[data-hud-index]');
  const nameEl = document.querySelector('[data-hud-name]');
@@ -231,19 +225,22 @@ function init() {
  };
  setActive(0, 'Intro', '#c9a27e');
 
- $('[data-hud-label]').forEach((el) => {
-  const chapter = el.closest('[data-chapter]');
-  const i = chapters.indexOf(chapter);
-  if (i < 0) return;
-  ScrollTrigger.create({
-   trigger: el,
-   start: 'top 55%',
-   end: 'bottom 55%',
-   onToggle: (self) => {
-    if (self.isActive) setActive(i, el.dataset.hudLabel, chapter.dataset.accent);
+ /* Use passive IntersectionObserver for chapter HUD detection instead of layout-reading ScrollTriggers */
+ if ('IntersectionObserver' in window) {
+  const hudObserver = new IntersectionObserver(
+   (entries) => {
+    entries.forEach((entry) => {
+     if (entry.isIntersecting) {
+      const chapter = entry.target.closest('[data-chapter]');
+      const i = chapters.indexOf(chapter);
+      if (i >= 0) setActive(i, entry.target.dataset.hudLabel, chapter.dataset.accent);
+     }
+    });
    },
-  });
- });
+   { rootMargin: '-25% 0px -25% 0px', threshold: 0.25 },
+  );
+  $('[data-hud-label]').forEach((el) => hudObserver.observe(el));
+ }
 
  /* The HUD steps aside when the footer arrives. */
  const footer = document.querySelector('.footer');
@@ -260,21 +257,18 @@ function init() {
  const skewTargets = $('[data-skew]');
  if (skewTargets.length) {
   const setters = skewTargets.map((el) => gsap.quickTo(el, 'skewY', { duration: 0.8, ease: 'power3' }));
-  let lastMove = 0;
+  let resetTimer = null;
   ScrollTrigger.create({
    start: 0,
    end: 'max',
    onUpdate: (self) => {
-    lastMove = performance.now();
     const v = clamp(self.getVelocity() / -700, -3, 3);
     setters.forEach((set) => set(v));
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(() => {
+     setters.forEach((set) => set(0));
+    }, 120);
    },
-  });
-  gsap.ticker.add(() => {
-   if (lastMove && performance.now() - lastMove > 120) {
-    lastMove = 0;
-    setters.forEach((set) => set(0));
-   }
   });
  }
 
