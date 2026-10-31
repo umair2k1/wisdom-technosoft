@@ -8,6 +8,11 @@ const endpoint = import.meta.env.PUBLIC_FORM_ENDPOINT || '/api/contact';
 
 const form = document.querySelector('[data-contact-form]');
 
+/* The invisible prewarm node in Contact.astro has done its job once the first
+   paints are through; drop it so it keeps no layer around. */
+const warm = document.querySelector('[data-form-warm]');
+if (warm) setTimeout(() => warm.remove(), 4000);
+
 if (form) {
   const $ = (selector) => form.querySelector(selector);
   const submitButton = $('button[type="submit"]');

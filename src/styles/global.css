@@ -837,6 +837,32 @@ html.menu-open .menu {
 }
 
 /* ---------- form ---------- */
+/* Paints native controls once at load, out of the scroll path. At 1% opacity it
+   is not visible; form.js removes the node after the first paints. */
+.form-warm {
+ position: fixed;
+ top: 50%;
+ left: 50%;
+ z-index: 90;
+ display: grid;
+ gap: 0.1rem;
+ width: 6rem;
+ height: 9rem;
+ overflow: hidden;
+ opacity: 0.01;
+ pointer-events: none;
+}
+
+.form-warm>* {
+ width: 100%;
+ height: 2rem;
+}
+
+.form-warm textarea {
+ height: 3rem;
+ resize: vertical;
+}
+
 .field {
  display: block;
  margin-top: 1.6rem;
@@ -997,6 +1023,10 @@ html.menu-open .menu {
  height: auto;
  opacity: 0.05;
  pointer-events: none;
+ /* Own compositor layer: the big translucent mark is costly to paint inline
+    the first time the footer nears the viewport; keep that raster off the
+    main-thread scroll frame. */
+ will-change: transform;
 }
 
 .footer-ghost .logo-accent {

@@ -77,11 +77,9 @@ export function start(canvas) {
    /* the lights below still carry the scene */
   }
  };
- if ('requestIdleCallback' in window) {
-  window.requestIdleCallback(initEnvironment, { timeout: 2500 });
- } else {
-  setTimeout(initEnvironment, 800);
- }
+ /* Build the environment before any material exists. Assigning scene.environment
+    later would force every shader program to recompile mid-scroll. */
+ initEnvironment();
 
  /* Lights ride on the camera, so every station is lit the same way and the
     light count never changes (no shader recompiles mid-scroll). */
@@ -373,21 +371,27 @@ export function start(canvas) {
   addHalo(group, 0x2b7bff, 9, 0.28, -2);
 
   const dummy = new THREE.Object3D();
+  let lastU = NaN;
   return {
    group,
    base: 1,
    update(u, t) {
-    for (let i = 0; i < items.length; i++) {
-     const it = items[i];
-     const p = clamp((u * 1.25 - it.delay * 0.55) / 0.5);
-     const e = p * p * (3 - 2 * p);
-     dummy.position.lerpVectors(it.start, it.end, e);
-     dummy.rotation.set(it.rot.x * (1 - e), it.rot.y * (1 - e), it.rot.z * (1 - e));
-     dummy.scale.lerpVectors(it.s0, it.s1, e);
-     dummy.updateMatrix();
-     mesh.setMatrixAt(i, dummy.matrix);
+    /* The block layout is a pure function of scroll progress. Skip the matrix
+       rebuild and the 107-instance upload while the page is not scrolling. */
+    if (Math.abs(u - lastU) > 1e-5) {
+     lastU = u;
+     for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      const p = clamp((u * 1.25 - it.delay * 0.55) / 0.5);
+      const e = p * p * (3 - 2 * p);
+      dummy.position.lerpVectors(it.start, it.end, e);
+      dummy.rotation.set(it.rot.x * (1 - e), it.rot.y * (1 - e), it.rot.z * (1 - e));
+      dummy.scale.lerpVectors(it.s0, it.s1, e);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
+     }
+     mesh.instanceMatrix.needsUpdate = true;
     }
-    mesh.instanceMatrix.needsUpdate = true;
     group.rotation.set(0.42, -0.5 + u * 1.1 + Math.sin(t * 0.2) * 0.05, 0);
    },
   };
@@ -984,23 +988,10 @@ export function start(canvas) {
   return scenes[i];
  }
 
- // Build hero scene and stars immediately
- getScene(0);
+ /* Build the whole world before the first scroll. warmUp() builds the scenes,
+    compiles every program and draws each station once, spread across frames so
+    the hero intro keeps animating. */
  scene.add(buildStars());
-
- // Background preload remaining scenes sequentially during idle periods
- let preloadIndex = 1;
- function preloadNext() {
-  if (preloadIndex < sceneBuilders.length) {
-   getScene(preloadIndex++);
-   if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(preloadNext, { timeout: 1500 });
-   } else {
-    setTimeout(preloadNext, 150);
-   }
-  }
- }
- setTimeout(preloadNext, 1200);
 
  /* ---------- scroll geometry ---------- */
  let bounds = [];
@@ -1148,8 +1139,46 @@ export function start(canvas) {
   }
  }
 
- /* Compile hero scene only so initial paint has zero stall */
- if (scenes[0]) renderer.compile(scenes[0].group, camera);
+ /* Warm every program, texture and buffer before the first scroll. compileAsync
+    links shaders in parallel (KHR_parallel_shader_compile) so the hero intro keeps
+    running; the low-resolution first draws create anything the compile pass could
+    not, while the canvas is still transparent. */
+ async function warmUp() {
+  const w = canvas.clientWidth || window.innerWidth;
+  const h = canvas.clientHeight || window.innerHeight;
+  const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+  try {
+   /* One station per frame. Building a scene and its first draw are the
+      expensive parts; yielding keeps the hero intro at full frame rate. */
+   for (let i = 0; i < n; i++) {
+    getScene(i);
+    await nextFrame();
+   }
+
+   if (renderer.compileAsync) await renderer.compileAsync(scene, camera);
+   else renderer.compile(scene, camera);
+
+   renderer.setPixelRatio(1);
+   renderer.setSize(320, 180, false);
+   for (let i = 0; i < n; i++) {
+    const sc = scenes[i];
+    if (!sc) continue;
+    for (let k = 0; k < scenes.length; k++) if (scenes[k]) scenes[k].group.visible = k === i;
+    const tt = i / (STATIONS.length - 1);
+    camCurve.getPoint(tt, camPos);
+    lookCurve.getPoint(tt, lookPos);
+    camera.position.copy(camPos);
+    camera.lookAt(lookPos);
+    renderer.render(scene, camera);
+    await nextFrame();
+   }
+  } finally {
+   for (let k = 0; k < scenes.length; k++) if (scenes[k]) scenes[k].group.visible = false;
+   renderer.setPixelRatio(dprNow);
+   renderer.setSize(w, h, false);
+   resize();
+  }
+ }
 
  let failed = false;
  const guarded = () => {
@@ -1164,7 +1193,11 @@ export function start(canvas) {
    window.dispatchEvent(new Event('wt:stage-fail'));
   }
  };
- renderer.setAnimationLoop(guarded);
+ warmUp()
+  .catch((err) => console.warn('[stage] warm-up skipped:', err))
+  .then(() => {
+   if (!failed) renderer.setAnimationLoop(guarded);
+  });
 
  document.addEventListener('visibilitychange', () => {
   if (failed) return;

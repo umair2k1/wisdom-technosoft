@@ -12,6 +12,8 @@ if (canvas && !root.classList.contains('no-stage')) {
     window.dispatchEvent(new Event('wt:stage-fail'));
   };
   const go = () => import('./world.js').then((world) => world.start(canvas)).catch(fail);
-  if ('requestIdleCallback' in window) window.requestIdleCallback(go, { timeout: 1500 });
-  else setTimeout(go, 80);
+  /* Start after the first paint instead of waiting up to 1.5s. The world warms
+     every shader up front, so that work should overlap the page load, not the
+     first scroll. */
+  requestAnimationFrame(go);
 }

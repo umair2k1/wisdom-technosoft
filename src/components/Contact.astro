@@ -4,6 +4,15 @@ import { site } from '../data/site.js';
 ---
 
 <section id="contact" class="contact" data-hud-label="Contact">
+  <!-- Invisible: paints the native form controls once at load so their first
+       real view never costs a scroll frame. Removed by form.js. -->
+  <div class="form-warm" data-form-warm aria-hidden="true" inert>
+    <input type="text" tabindex="-1" />
+    <select tabindex="-1"><option></option></select>
+    <textarea tabindex="-1" rows="1"></textarea>
+    <button type="button" tabindex="-1"></button>
+  </div>
+
   <div class="contact-grid">
     <div data-reveal>
       <p class="kicker">Contact</p>
