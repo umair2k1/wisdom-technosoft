@@ -33,6 +33,9 @@ html {
  overflow-x: clip;
  /* clip, not hidden: keeps position: sticky working */
  color-scheme: dark;
+ /* The loader locks scrolling; keeping the gutter reserved means the page
+    does not jump sideways when it hands control back. */
+ scrollbar-gutter: stable;
 }
 @supports (text-size-adjust: 100%) or (-webkit-text-size-adjust: 100%) {
  html {
@@ -94,6 +97,106 @@ main {
 
 .skip:focus {
  transform: none;
+}
+
+/* ============================================================
+   Loader: covers the page until fonts and the 3D warm-up are done.
+   boot.js adds html.site-ready, which fades it out and starts the hero.
+   ============================================================ */
+html.js[data-loading]:not(.site-ready) {
+ overflow: hidden;
+}
+
+.loader {
+ position: fixed;
+ inset: 0;
+ z-index: 200;
+ display: none;
+ flex-direction: column;
+ align-items: center;
+ justify-content: center;
+ gap: 1.6rem;
+ background: var(--ink);
+ opacity: 1;
+ visibility: visible;
+ transition: opacity 0.5s ease, visibility 0.5s;
+}
+
+html.js .loader {
+ display: flex;
+}
+
+html.site-ready .loader {
+ opacity: 0;
+ visibility: hidden;
+ pointer-events: none;
+}
+
+.loader-mark {
+ width: 3.6rem;
+ height: auto;
+ opacity: 0.85;
+ animation: loader-pulse 1.8s ease-in-out infinite;
+}
+
+.loader-bar {
+ position: relative;
+ display: block;
+ width: 6rem;
+ height: 1px;
+ overflow: hidden;
+ background: var(--line);
+}
+
+.loader-bar i {
+ position: absolute;
+ inset: 0 auto 0 0;
+ display: block;
+ width: 40%;
+ background: var(--tan);
+ animation: loader-slide 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.loader-label {
+ font: 500 0.68rem / 1 var(--sans);
+ letter-spacing: 0.26em;
+ text-transform: uppercase;
+ color: var(--muted);
+ opacity: 0.6;
+}
+
+@keyframes loader-pulse {
+ 0%,
+ 100% {
+  opacity: 0.35;
+ }
+
+ 50% {
+  opacity: 0.9;
+ }
+}
+
+@keyframes loader-slide {
+ 0% {
+  transform: translateX(-120%);
+ }
+
+ 100% {
+  transform: translateX(320%);
+ }
+}
+
+@media (prefers-reduced-motion: reduce) {
+ .loader-mark,
+ .loader-bar i {
+  animation: none;
+ }
+
+ .loader-bar i {
+  width: 100%;
+  opacity: 0.45;
+  transform: none;
+ }
 }
 
 /* ============================================================

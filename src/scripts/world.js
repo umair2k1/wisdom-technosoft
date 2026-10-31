@@ -51,6 +51,14 @@ export function start(canvas) {
  const rand = seeded(2026);
  const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
+ /* The loader covers the first screen while the world warms up. Hold the hero
+    emblem's assembly until boot.js reveals the page, otherwise its intro would
+    finish unseen behind the overlay. */
+ let heroReleased = window.__siteReady === true;
+ window.addEventListener('wt:site-ready', () => {
+  heroReleased = true;
+ }, { once: true });
+
  /* ---------- renderer, scene, camera, light ---------- */
  const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -279,13 +287,13 @@ export function start(canvas) {
      drift:  extra outward distance */
   const pose = (introT, arrive, burst, drift) => {
    pieces.forEach((p) => {
-    const k = clamp((introT - 0.25 - p.delay) / 1.5);
-    const away = Math.max(Math.pow(1 - k, 3), clamp(arrive * 1.25 - p.delay * 0.4));
-    const dist = away * 6 + Math.pow(burst, 1.6) * 16 + drift;
+    const k = clamp((introT - 0.15 - p.delay * 0.75) / 1.15);
+    const away = Math.max(Math.pow(1 - k, 3.2), clamp(arrive * 1.25 - p.delay * 0.4));
+    const dist = away * 5.5 + Math.pow(burst, 1.6) * 16 + drift;
     p.mesh.position.copy(p.home).addScaledVector(p.dir, dist);
-    p.mesh.position.z = -away * 10 + burst * 3 * p.spin;
-    p.mesh.rotation.set(p.spin * away * 0.9, p.spin * away * 1.1, p.spin * (away * 1.3 + burst * 1.5));
-    p.mesh.scale.setScalar(Math.max(0.01, 1 + burst * 0.8 - away * 0.25));
+    p.mesh.position.z = -away * 9 + burst * 3 * p.spin;
+    p.mesh.rotation.set(p.spin * away * 0.85, p.spin * away * 1.05, p.spin * (away * 1.2 + burst * 1.5));
+    p.mesh.scale.setScalar(Math.max(0.01, 1 + burst * 0.8 - away * 0.2));
    });
   };
 
@@ -301,15 +309,24 @@ export function start(canvas) {
    group: e.group,
    base: 1,
    update(u, t, s, ptr) {
-    if (t0 < 0) t0 = t;
+    if (t0 < 0 && heroReleased) t0 = t;
+    const age = t0 < 0 ? 0 : t - t0;
     const burst = smooth(0, 0.2, s);
-    e.pose(t - t0, 0, burst, s * 30);
+    e.pose(age, 0, burst, s * 30);
+
+    /* During entrance, emblem starts with an elegant perspective tilt that catches the key light,
+       then gracefully settles into its resting hover. */
+    const introProgress = clamp(age / 1.7);
+    const introSettle = introProgress * introProgress * (3 - 2 * introProgress);
+    const introTiltX = (1 - introSettle) * 0.18;
+    const introTurnY = (1 - introSettle) * -0.36;
+
     e.inner.rotation.set(
-     -ptr.y * 0.14 + Math.sin(t * 0.27) * 0.05,
-     Math.sin(t * 0.35) * 0.22 + ptr.x * 0.25 + (u - 0.5) * 0.35,
+     introTiltX - ptr.y * 0.14 + Math.sin(t * 0.27) * 0.05,
+     introTurnY + Math.sin(t * 0.35) * 0.22 + ptr.x * 0.25 + (u - 0.5) * 0.35,
      0,
     );
-    halo.material.opacity = 0.5 * clamp((t - t0) * 0.8) * (1 - burst);
+    halo.material.opacity = 0.5 * clamp(age * 0.75) * (1 - burst);
     e.group.visible = s < 0.6;
    },
   };
@@ -1219,14 +1236,24 @@ export function start(canvas) {
  getScene(0);
  if (!failed && !lost) renderer.setAnimationLoop(guarded);
 
+ /* The loader waits for this. Warming every station before the reveal means the
+    hero entrance starts on a page that has no shader compiles or first-draw
+    hitches left in it. */
+ const worldReady = () => {
+  if (window.__worldReady) return;
+  window.__worldReady = true;
+  window.dispatchEvent(new Event('wt:world-ready'));
+ };
+ const warm = () => {
+  warmUp()
+   .catch((err) => console.warn('[stage] warm-up skipped:', err))
+   .finally(worldReady);
+ };
+
  if ('requestIdleCallback' in window) {
-  window.requestIdleCallback(() => {
-   warmUp().catch((err) => console.warn('[stage] warm-up skipped:', err));
-  }, { timeout: 2500 });
+  window.requestIdleCallback(warm, { timeout: 2500 });
  } else {
-  setTimeout(() => {
-   warmUp().catch((err) => console.warn('[stage] warm-up skipped:', err));
-  }, 1200);
+  setTimeout(warm, 1200);
  }
 
  document.addEventListener('visibilitychange', () => {
@@ -1253,6 +1280,7 @@ export function start(canvas) {
    activeRenderer = null;
    root.classList.add('no-stage');
    window.dispatchEvent(new Event('wt:stage-fail'));
+   window.dispatchEvent(new Event('wt:world-ready'));
   }, 5000);
  });
 

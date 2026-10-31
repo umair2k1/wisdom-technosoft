@@ -42,7 +42,7 @@ const jsonLd = {
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-loading={stage ? 'true' : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -115,6 +115,11 @@ const jsonLd = {
         );
         if (reduce) d.classList.add('no-motion');
         if (reduce || !gl || lean) d.classList.add('no-stage');
+
+        /* Last-resort reveal if the loader's own scripts never run. */
+        setTimeout(function () {
+          d.classList.add('site-ready');
+        }, 12000);
       })();
     </script>
   </head>

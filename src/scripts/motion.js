@@ -96,23 +96,61 @@ function init() {
  const hero = document.querySelector('.hero');
  if (hero) {
   const rows = $('.row', hero);
-  const chars = $('[data-split]', hero).flatMap(splitChars);
+  const rowChars = rows.map((row) => $('[data-split]', row).flatMap(splitChars));
+  const chars = rowChars.flat();
+  const eyebrow = hero.querySelector('.eyebrow');
+  const lede = hero.querySelector('.lede');
+  const ctas = $('a', hero.querySelector('.cta-row') || hero);
+  const nav = document.querySelector('.nav');
+  const hud = $('.hud-count, .hud-rail');
+  const cue = hero.querySelector('[data-scroll-cue]');
   const intro = $('[data-hero-in]', hero);
 
-  gsap.set(chars, { yPercent: 108, opacity: 0 });
-  gsap.set(intro, { y: 26, opacity: 0 });
+  gsap.set(chars, { yPercent: 110, opacity: 0 });
+  if (eyebrow) gsap.set(eyebrow, { y: 14, opacity: 0 });
+  if (lede) gsap.set(lede, { y: 20, opacity: 0 });
+  if (ctas.length) gsap.set(ctas, { y: 16, opacity: 0 });
+  if (nav) gsap.set(nav, { y: -14, opacity: 0 });
+  if (hud.length) gsap.set(hud, { opacity: 0 });
+  if (cue) gsap.set(cue, { opacity: 0, y: 10 });
 
   const entrance = gsap
-   .timeline({ paused: true, defaults: { ease: 'power3.out' } })
-   .to(chars, { yPercent: 0, opacity: 1, duration: 1.05, stagger: 0.018, force3D: true }, 0)
-   .to(intro, { y: 0, opacity: 1, duration: 0.85, stagger: 0.08, force3D: true }, 0.45)
-   .add(() => rows.forEach((row) => (row.style.overflow = 'visible')));
+   .timeline({
+    paused: true,
+    defaults: { ease: 'power3.out' },
+    onComplete: () => {
+     /* The letters stay composited for the scroll scatter; release them now so
+        every glyph does not pin a compositor layer for the life of the page. */
+     gsap.set(chars, { willChange: 'auto' });
+    },
+   });
 
-  /* Wait for the web fonts (max 1.2s) so the letters never swap typeface mid-rise. */
-  const fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-  Promise.race([fontsReady, new Promise((resolve) => setTimeout(resolve, 1200))]).then(() => {
-   requestAnimationFrame(() => entrance.play());
+  if (nav) entrance.to(nav, { y: 0, opacity: 1, duration: 0.75, ease: 'power2.out' }, 0.1);
+  if (eyebrow) entrance.to(eyebrow, { y: 0, opacity: 1, duration: 0.65, ease: 'power3.out' }, 0.18);
+
+  const rowDelays = [0.26, 0.52, 0.82];
+  rowChars.forEach((rc, rIdx) => {
+   if (rc.length) {
+    entrance.to(
+     rc,
+     { yPercent: 0, opacity: 1, duration: 0.95, stagger: 0.02, force3D: true },
+     rowDelays[rIdx] || 0.25 + rIdx * 0.28,
+    );
+   }
   });
+
+  if (lede) entrance.to(lede, { y: 0, opacity: 1, duration: 0.75, ease: 'power3.out' }, 1.05);
+  if (ctas.length) entrance.to(ctas, { y: 0, opacity: 1, duration: 0.65, stagger: 0.08, ease: 'power3.out' }, 1.2);
+  if (hud.length) entrance.to(hud, { opacity: 1, duration: 0.7, ease: 'power2.out' }, 1.35);
+  if (cue) entrance.to(cue, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, 1.4);
+
+  entrance.add(() => rows.forEach((row) => (row.style.overflow = 'visible')), 1.8);
+
+  /* boot.js holds the loader until the fonts and the 3D warm-up are ready; only
+     then does the entrance start, so nothing reflows or competes with it. */
+  const play = () => requestAnimationFrame(() => entrance.play());
+  if (window.__siteReady) play();
+  else window.addEventListener('wt:site-ready', play, { once: true });
 
   const tl = track(hero, 0.8);
   chars.forEach((c, i) => {
