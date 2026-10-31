@@ -1,15 +1,14 @@
 /* ------------------------------------------------------------------
-   The 3D world (High-Performance Fast-Path).
-   One fixed canvas, one continuous camera move.
-   Stations:
-   0: Hero mark
-   1: Software blocks skyline
-   2: Telecalling voice rings & particles
-   3: Data lattice
-   4: Operations gears & belt
-   5: Healthcare cross & ECG
-   6: Principles carousel
-   7: Finale emblem
+   The 3D world.
+   One fixed canvas, one continuous camera move. Each [data-chapter]
+   in the page is a "station" in space; scrolling flies the camera from
+   station to station and scrubs whatever is happening at each one.
+
+   Station i  <->  [data-chapter="i"]   (hero, 5 services, principles, finale)
+   Edit STATIONS to re-route the flight, buildX() to change a scene.
+
+   Loaded on demand by stage.js. `import * as THREE` is tree-shaken at build
+   time because THREE is only ever accessed as THREE.Something.
    ------------------------------------------------------------------ */
 
 import * as THREE from 'three';
@@ -47,30 +46,27 @@ export function start(canvas) {
  if (!chapters.length) return;
 
  const mobile = window.matchMedia('(max-width: 767px), (pointer: coarse)').matches;
- const maxDPR = Math.min(window.devicePixelRatio || 1, 1.5);
- let currentDPR = 1; // Start at 1 for fast-path launch
+ const DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+ let dprNow = DPR; // drops to 1 if the first seconds run slowly
  const rand = seeded(2026);
  const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
- /* ---------- renderer fast-path: opaque canvas, no stencil/antialias overhead ---------- */
+ /* ---------- renderer, scene, camera, light ---------- */
  const renderer = new THREE.WebGLRenderer({
   canvas,
+  antialias: !mobile,
+  alpha: true,
   powerPreference: 'high-performance',
-  alpha: false,
-  antialias: false,
-  stencil: false,
-  depth: true,
  });
  activeRenderer = renderer;
- renderer.setPixelRatio(currentDPR);
- renderer.setClearColor(0x040405, 1);
+ renderer.setPixelRatio(DPR);
+ renderer.setClearColor(0x000000, 0);
  renderer.outputColorSpace = THREE.SRGBColorSpace;
  renderer.toneMapping = THREE.ACESFilmicToneMapping;
  renderer.toneMappingExposure = 1.05;
  renderer.debug.checkShaderErrors = false;
 
  const scene = new THREE.Scene();
- scene.background = new THREE.Color(0x040405);
  scene.fog = new THREE.FogExp2(0x040405, 0.02);
 
  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 420);
@@ -84,12 +80,16 @@ export function start(canvas) {
    scene.environmentIntensity = 0.5;
    pmrem.dispose();
   } catch (e) {
-   /* lights carry scene if pmrem unavailable */
+   /* the lights below still carry the scene */
   }
  };
+ /* Build the environment before any material exists. Assigning scene.environment
+    later would force every shader program to recompile mid-scroll. */
+ initEnvironment();
 
- /* Lights ride on camera */
- scene.add(new THREE.AmbientLight(0xffffff, 0.16));
+ /* Lights ride on the camera, so every station is lit the same way and the
+    light count never changes (no shader recompiles mid-scroll). */
+ scene.add(new THREE.AmbientLight(0xffffff, 0.14));
  const key = new THREE.PointLight(0xfff1dd, 420, 0, 2);
  key.position.set(3.5, 3.5, 3);
  camera.add(key);
@@ -99,14 +99,14 @@ export function start(canvas) {
 
  /* ---------- the route ---------- */
  const STATIONS = [
-  V(0, 0, 0),       // 0 hero
-  V(14, 2, -62),    // 1 software
+  V(0, 0, 0), // 0 hero
+  V(14, 2, -62), // 1 software
   V(-16, -3, -126), // 2 telecalling
-  V(11, 4, -190),   // 3 data
-  V(-13, 0, -254),  // 4 operations
-  V(15, -2, -318),  // 5 healthcare
-  V(0, 0, -384),    // 6 principles
-  V(0, 0, -446),    // 7 finale
+  V(11, 4, -190), // 3 data
+  V(-13, 0, -254), // 4 operations
+  V(15, -2, -318), // 5 healthcare
+  V(0, 0, -384), // 6 principles
+  V(0, 0, -446), // 7 finale
  ];
  const FILL_COLORS = [0x2b7bff, 0x2b7bff, 0xe8b27a, 0x5fd0ff, 0x9fb2d6, 0x3ecf8e, 0xf4f0e8, 0xc9a27e].map(
   (c) => new THREE.Color(c),
@@ -162,12 +162,13 @@ export function start(canvas) {
   return sprite;
  }
 
- /* Standard materials compile in <10ms and avoid heavy clearcoat programs */
  const metal = (color, roughness = 0.26) =>
-  new THREE.MeshStandardMaterial({
+  new THREE.MeshPhysicalMaterial({
    color,
-   metalness: 0.88,
+   metalness: 1,
    roughness,
+   clearcoat: 0.35,
+   clearcoatRoughness: 0.35,
   });
  const TAN = metal(0xc9a27e);
  const IVORY = metal(0xf4f0e8, 0.2);
@@ -175,7 +176,7 @@ export function start(canvas) {
 
  /* ---------- background: stars ---------- */
  function buildStars() {
-  const count = mobile ? 600 : 1200;
+  const count = mobile ? 900 : 1900;
   const pos = new Float32Array(count * 3);
   const col = new Float32Array(count * 3);
   const c = new THREE.Color();
@@ -208,6 +209,9 @@ export function start(canvas) {
   return points;
  }
 
+ /* ---------- the brand mark, extruded: crown + three ivory shapes ----------
+    Geometry comes from src/data/logo.js, so it is the real logo, not a lookalike.
+    The crown colour is read from --logo-accent in global.css. */
  const brandAccent = (() => {
   try {
    const raw = getComputedStyle(root).getPropertyValue('--logo-accent').trim();
@@ -225,22 +229,26 @@ export function start(canvas) {
   const [bx0, by0, bx1, by1] = LOGO.bbox;
   const cx = (bx0 + bx1) / 2;
   const cy = (by0 + by1) / 2;
-  const S = 5.2 / (bx1 - bx0);
+  const S = 5.2 / (bx1 - bx0); // the mark is 5.2 world units wide
   const DEPTH = 0.36;
 
-  const bodyMat = new THREE.MeshStandardMaterial({
+  const bodyMat = new THREE.MeshPhysicalMaterial({
    color: 0xf4f0e8,
-   metalness: 0.82,
-   roughness: 0.3,
-   emissive: 0xf4f0e8,
-   emissiveIntensity: 0.06,
-  });
-  const accentMat = new THREE.MeshStandardMaterial({
-   color: brandAccent,
-   metalness: 0.88,
+   metalness: 0.9,
    roughness: 0.28,
+   clearcoat: 0.5,
+   clearcoatRoughness: 0.3,
+   emissive: 0xf4f0e8,
+   emissiveIntensity: 0.08,
+  });
+  const accentMat = new THREE.MeshPhysicalMaterial({
+   color: brandAccent,
+   metalness: 0.95,
+   roughness: 0.26,
+   clearcoat: 0.5,
+   clearcoatRoughness: 0.3,
    emissive: brandAccent,
-   emissiveIntensity: 0.1,
+   emissiveIntensity: 0.12,
   });
 
   const pieces = LOGO.pieces.map((piece, i) => {
@@ -250,9 +258,9 @@ export function start(canvas) {
    const geo = new THREE.ExtrudeGeometry(shape, {
     depth: DEPTH,
     bevelEnabled: true,
-    bevelThickness: 0.04,
-    bevelSize: 0.03,
-    bevelSegments: 2,
+    bevelThickness: 0.05,
+    bevelSize: 0.035,
+    bevelSegments: 3,
     curveSegments: 1,
    });
    geo.translate(0, 0, -DEPTH / 2);
@@ -265,6 +273,10 @@ export function start(canvas) {
    return { mesh, home: mesh.position.clone(), dir, spin: (rand() - 0.5) * 2, delay: i * 0.16 };
   });
 
+  /* introT: seconds since the assembly began (Infinity = assembled)
+     arrive: 0..1, pieces still far away (finale approach)
+     burst:  0..1, pieces thrown outward (hero fly-through)
+     drift:  extra outward distance */
   const pose = (introT, arrive, burst, drift) => {
    pieces.forEach((p) => {
     const k = clamp((introT - 0.25 - p.delay) / 1.5);
@@ -280,7 +292,7 @@ export function start(canvas) {
   return { group, inner, pose };
  }
 
- /* ---------- scene 0: hero ---------- */
+ /* ---------- scene 0: hero. The mark assembles, then bursts apart as the camera flies through. ---------- */
  function buildHero() {
   const e = buildEmblem();
   const halo = addHalo(e.group, brandAccent, 12, 0.5, -1.2);
@@ -303,7 +315,7 @@ export function start(canvas) {
   };
  }
 
- /* ---------- scene 1: software (Blocks skyline) ---------- */
+ /* ---------- scene 1: software. Scattered blocks assemble into a skyline. ---------- */
  function buildBlocks() {
   const group = new THREE.Group();
   const NG = 9;
@@ -387,7 +399,7 @@ export function start(canvas) {
    group,
    base: 1,
    update(u, t) {
-    if (Math.abs(u - lastU) > 1e-4) {
+    if (Math.abs(u - lastU) > 1e-5) {
      lastU = u;
      applyLayout(u);
     }
@@ -396,7 +408,7 @@ export function start(canvas) {
   };
  }
 
- /* ---------- scene 2: telecalling (Voice rings & particles) ---------- */
+ /* ---------- scene 2: telecalling. A voice: rings, waveform, outgoing particles. ---------- */
  function buildVoice() {
   const group = new THREE.Group();
   const ringMat = (opacity) =>
@@ -411,14 +423,14 @@ export function start(canvas) {
   const rings = [];
   for (let i = 0; i < 7; i++) {
    const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(0.75 + i * 0.33, i % 3 === 0 ? 0.016 : 0.009, 6, 96),
+    new THREE.TorusGeometry(0.75 + i * 0.33, i % 3 === 0 ? 0.016 : 0.009, 6, 160),
     ringMat(0.62 - i * 0.06),
    );
    group.add(ring);
    rings.push(ring);
   }
 
-  const SEG = 180;
+  const SEG = 240;
   const wavePos = new Float32Array(SEG * 3);
   const waveGeo = new THREE.BufferGeometry();
   waveGeo.setAttribute('position', new THREE.BufferAttribute(wavePos, 3));
@@ -430,7 +442,7 @@ export function start(canvas) {
   group.add(wave);
 
   const core = new THREE.Mesh(
-   new THREE.IcosahedronGeometry(0.4, 2),
+   new THREE.IcosahedronGeometry(0.4, 3),
    new THREE.MeshStandardMaterial({
     color: 0x1a120a,
     emissive: 0xe8b27a,
@@ -441,8 +453,7 @@ export function start(canvas) {
   );
   group.add(core);
 
-  // Reduced particle count by 60% to avoid CPU loops
-  const PN = mobile ? 80 : 160;
+  const PN = mobile ? 220 : 420;
   const pPos = new Float32Array(PN * 3);
   const pCol = new Float32Array(PN * 3);
   const pAng = new Float32Array(PN);
@@ -472,7 +483,6 @@ export function start(canvas) {
    group,
    base: 1,
    update(u, t) {
-    if (!group.visible) return;
     const energy = 0.3 + 0.7 * smooth(0.02, 0.4, u) * (1 - 0.55 * smooth(0.85, 1, u));
 
     for (let i = 0; i < SEG; i++) {
@@ -509,12 +519,12 @@ export function start(canvas) {
   };
  }
 
- /* ---------- scene 3: data (GPU Shader Lattice) ---------- */
+ /* ---------- scene 3: data. A noisy cloud is swept into a clean lattice. ---------- */
  function buildData() {
-  const NX = 18;
-  const NY = 12;
-  const NZ = mobile ? 6 : 12;
-  const SP = 0.22;
+  const NX = 20;
+  const NY = 14;
+  const NZ = mobile ? 8 : 15;
+  const SP = 0.2;
   const W = (NX - 1) * SP;
   const count = NX * NY * NZ;
   const start = new Float32Array(count * 3);
@@ -542,7 +552,7 @@ export function start(canvas) {
   const uniforms = {
    uP: { value: 0 },
    uTime: { value: 0 },
-   uSize: { value: 2.5 },
+   uSize: { value: 2.5 * DPR },
    uW: { value: W },
    uFog: { value: scene.fog.density },
   };
@@ -626,7 +636,6 @@ export function start(canvas) {
     uniforms.uSize.value = 2.5 * v;
    },
    update(u, t) {
-    if (!group.visible) return;
     uniforms.uP.value = u;
     uniforms.uTime.value = t;
     const x = (u * 1.3 - 0.15 - 0.5) * W;
@@ -640,7 +649,7 @@ export function start(canvas) {
   };
  }
 
- /* ---------- scene 4: operations (Gears & Conveyor) ---------- */
+ /* ---------- scene 4: operations. Gears driven by the scrollbar, a conveyor below. ---------- */
  function buildGears() {
   const group = new THREE.Group();
   const inner = new THREE.Group();
@@ -674,10 +683,10 @@ export function start(canvas) {
    const geo = new THREE.ExtrudeGeometry(shape, {
     depth: 0.42,
     bevelEnabled: true,
-    bevelThickness: 0.03,
-    bevelSize: 0.03,
+    bevelThickness: 0.035,
+    bevelSize: 0.035,
     bevelSegments: 2,
-    curveSegments: 8,
+    curveSegments: 12,
    });
    geo.translate(0, 0, -0.21);
    return { mesh: new THREE.Mesh(geo, material), rp, teeth };
@@ -692,9 +701,10 @@ export function start(canvas) {
   C.mesh.position.set(Math.cos(thC) * (A.rp + C.rp), Math.sin(thC) * (A.rp + C.rp), 0);
   inner.add(A.mesh, B.mesh, C.mesh);
 
+  /* Rotation that keeps tooth/gap phase locked to gear A (contact at global angle th). */
   const meshRot = (rotA, nA, nB, th) => th * (1 + nA / nB) + Math.PI - Math.PI / nB - rotA * (nA / nB);
 
-  const BN = 22;
+  const BN = 26;
   const belt = new THREE.InstancedMesh(
    new THREE.BoxGeometry(0.22, 0.22, 0.22),
    new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.5, roughness: 0.4 }),
@@ -719,7 +729,6 @@ export function start(canvas) {
    group,
    base: 0.6,
    update(u, t) {
-    if (!group.visible) return;
     const rotA = u * 7 + t * 0.1;
     A.mesh.rotation.z = rotA;
     B.mesh.rotation.z = meshRot(rotA, A.teeth, B.teeth, thB);
@@ -742,7 +751,7 @@ export function start(canvas) {
   };
  }
 
- /* ---------- scene 5: healthcare (Soft cross & ECG trace) ---------- */
+ /* ---------- scene 5: healthcare. A soft cross and a heartbeat trace. ---------- */
  function buildCare() {
   const group = new THREE.Group();
 
@@ -768,24 +777,25 @@ export function start(canvas) {
   const geo = new THREE.ExtrudeGeometry(shape, {
    depth: 0.4,
    bevelEnabled: true,
-   bevelThickness: 0.12,
-   bevelSize: 0.12,
-   bevelSegments: 3,
-   curveSegments: 5,
+   bevelThickness: 0.14,
+   bevelSize: 0.14,
+   bevelSegments: 5,
+   curveSegments: 6,
   });
   geo.center();
-  const material = new THREE.MeshStandardMaterial({
+  const material = new THREE.MeshPhysicalMaterial({
    color: 0xe9fff4,
-   roughness: 0.24,
+   roughness: 0.22,
    metalness: 0.05,
+   clearcoat: 1,
+   clearcoatRoughness: 0.1,
    emissive: 0x3ecf8e,
    emissiveIntensity: 0.25,
   });
   const plus = new THREE.Mesh(geo, material);
   group.add(plus);
 
-  // Reduced ECG trace count by 60%
-  const EN = mobile ? 60 : 120;
+  const EN = mobile ? 170 : 280;
   const ePos = new Float32Array(EN * 3);
   const eCol = new Float32Array(EN * 3);
   for (let i = 0; i < EN; i++) {
@@ -837,7 +847,6 @@ export function start(canvas) {
    group,
    base: 0.88,
    update(u, t) {
-    if (!group.visible) return;
     const phase = u * 3.4 + t * 0.4;
     for (let i = 0; i < EN; i++) {
      const x = (i / (EN - 1) - 0.5) * 7.2;
@@ -857,7 +866,7 @@ export function start(canvas) {
   };
  }
 
- /* ---------- scene 6: principles (Carousel) ---------- */
+ /* ---------- scene 6: principles. Four objects on a carousel, one per principle. ---------- */
  function buildPrinciples() {
   const group = new THREE.Group();
   const ring = new THREE.Group();
@@ -867,14 +876,14 @@ export function start(canvas) {
 
   const defs = [
    { geo: new THREE.IcosahedronGeometry(1, 1), color: 0xf4f0e8, glow: 0xf4f0e8, flat: true },
-   { geo: new THREE.TorusGeometry(0.95, 0.15, 16, 64), color: 0x8fb4ff, glow: 0x2b7bff, flat: false },
-   { geo: new THREE.TorusKnotGeometry(0.62, 0.2, 96, 14, 2, 3), color: 0x9fe6ff, glow: 0x00f0ff, flat: false },
-   { geo: new THREE.SphereGeometry(0.95, 32, 24), color: 0xc9a27e, glow: 0xc9a27e, flat: false },
+   { geo: new THREE.TorusGeometry(0.95, 0.15, 24, 96), color: 0x8fb4ff, glow: 0x2b7bff, flat: false },
+   { geo: new THREE.TorusKnotGeometry(0.62, 0.2, 160, 18, 2, 3), color: 0x9fe6ff, glow: 0x00f0ff, flat: false },
+   { geo: new THREE.SphereGeometry(0.95, 48, 32), color: 0xc9a27e, glow: 0xc9a27e, flat: false },
   ];
   const slots = defs.map((d, k) => {
-   const mat = new THREE.MeshStandardMaterial({
+   const mat = new THREE.MeshPhysicalMaterial({
     color: d.color,
-    metalness: 0.9,
+    metalness: 1,
     roughness: 0.2,
     flatShading: d.flat,
     emissive: d.glow,
@@ -889,7 +898,7 @@ export function start(canvas) {
   });
 
   const bead = new THREE.Mesh(
-   new THREE.SphereGeometry(0.11, 12, 10),
+   new THREE.SphereGeometry(0.11, 16, 12),
    new THREE.MeshBasicMaterial({ color: 0xbfe0ff, toneMapped: false }),
   );
   slots[1].mesh.add(bead);
@@ -899,7 +908,6 @@ export function start(canvas) {
    group,
    base: 1,
    update(u, t) {
-    if (!group.visible) return;
     const v = clamp(u * 4, 0, 3.999);
     const idx = Math.floor(v);
     const act = idx + (idx < 3 ? smooth(0.55, 1, v - idx) : 0);
@@ -915,7 +923,7 @@ export function start(canvas) {
   };
  }
 
- /* ---------- scene 7: finale ---------- */
+ /* ---------- scene 7: finale. The pieces fly back together as the camera arrives. ---------- */
  function buildFinale() {
   const e = buildEmblem();
   addHalo(e.group, brandAccent, 11, 0.35, -1.2);
@@ -923,8 +931,8 @@ export function start(canvas) {
    group: e.group,
    base: 0.92,
    update(u, t, s, ptr) {
-    if (!e.group.visible) return;
     e.pose(Infinity, 1 - smooth(6.1, 6.95, s), 0, 0);
+    /* sway, never a full turn: the mark is asymmetric and must not show its back */
     e.inner.rotation.set(
      Math.sin(t * 0.2) * 0.08 - ptr.y * 0.1,
      Math.sin(u * Math.PI * 2) * 0.4 + Math.sin(t * 0.3) * 0.1 + ptr.x * 0.2,
@@ -934,7 +942,7 @@ export function start(canvas) {
   };
  }
 
- /* ---------- scene builders array ---------- */
+ /* ---------- assemble (lazy instantiation) ---------- */
  const sceneBuilders = [
   buildHero,
   buildBlocks,
@@ -952,13 +960,14 @@ export function start(canvas) {
   el.dataset.object === 'left' ? -1 : el.dataset.object === 'right' ? 1 : 0,
  );
 
+ /* ---------- layout: keep each object on the side opposite its text ---------- */
  function layoutScene(i) {
   const sc = scenes[i];
   if (!sc) return;
   const aspect = camera.aspect;
   const halfH = Math.tan(THREE.MathUtils.degToRad(20)) * CAM_DIST;
   const halfW = halfH * aspect;
-  const portrait = aspect < 0.9 || window.innerWidth < 768;
+  const portrait = aspect < 0.9 || window.innerWidth < 768; // same rule as the stacked layout in global.css
   let x = 0;
   let y = 0;
   let fit = 1;
@@ -985,10 +994,15 @@ export function start(canvas) {
    scenes[i] = sc;
    scene.add(sc.group);
    layoutScene(i);
-   if (currentDPR === 1 && sc.setPixelRatio) sc.setPixelRatio(1);
+   if (dprNow === 1 && sc.setPixelRatio) sc.setPixelRatio(1);
   }
   return scenes[i];
  }
+
+ /* Build the whole world before the first scroll. warmUp() builds the scenes,
+    compiles every program and draws each station once, spread across frames so
+    the hero intro keeps animating. */
+ scene.add(buildStars());
 
  /* ---------- scroll geometry ---------- */
  let bounds = [];
@@ -996,21 +1010,19 @@ export function start(canvas) {
  function measure() {
   vh = window.innerHeight;
   bounds = chapters.map((el) => {
-   const top = el.offsetTop;
-   const h = el.offsetHeight;
-   return { top, h };
+   const r = el.getBoundingClientRect();
+   return { top: r.top + window.scrollY, h: r.height };
   });
  }
 
  function resize() {
   const w = canvas.clientWidth || window.innerWidth;
   const h = canvas.clientHeight || window.innerHeight;
-  renderer.setPixelRatio(currentDPR);
+  renderer.setPixelRatio(Math.min(dprNow, 1.5));
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
   layout();
-  wakeLoop();
  }
 
  measure();
@@ -1019,14 +1031,8 @@ export function start(canvas) {
   new ResizeObserver(resize).observe(canvas);
   new ResizeObserver(measure).observe(document.documentElement);
  }
- window.addEventListener('resize', () => {
-  measure();
-  wakeLoop();
- });
- window.addEventListener('load', () => {
-  measure();
-  wakeLoop();
- });
+ window.addEventListener('resize', measure);
+ window.addEventListener('load', measure);
 
  /* ---------- pointer parallax ---------- */
  const ptr = { x: 0, y: 0, tx: 0, ty: 0 };
@@ -1036,13 +1042,12 @@ export function start(canvas) {
    (event) => {
     ptr.tx = (event.clientX / window.innerWidth - 0.5) * 2;
     ptr.ty = -(event.clientY / window.innerHeight - 0.5) * 2;
-    wakeLoop();
    },
    { passive: true },
   );
  }
 
- /* ---------- unified animation loop with idle hibernation ---------- */
+ /* ---------- the loop ---------- */
  const clock = new THREE.Clock();
  const camPos = new THREE.Vector3();
  const lookPos = new THREE.Vector3();
@@ -1053,69 +1058,18 @@ export function start(canvas) {
  let fov = camera.fov;
  let first = true;
  let live = false;
- let lost = false;
- let gaveUp = false;
- let lostTimer = 0;
-
- let isIdle = false;
- let animFrameId = null;
- let isScrolling = false;
- let scrollTimer = null;
- let initTime = performance.now();
- let frameCount = 0;
- let frameTimeAcc = 0;
-
- function wakeLoop() {
-  isIdle = false;
-  if (!animFrameId && !lost && !gaveUp) {
-   clock.getDelta();
-   animFrameId = requestAnimationFrame(frame);
-  }
- }
-
- window.addEventListener(
-  'scroll',
-  () => {
-   isScrolling = true;
-   // Fast-path: drop DPR to 1 during active scrolling for locked 60fps
-   if (currentDPR > 1) {
-    currentDPR = 1;
-    renderer.setPixelRatio(1);
-   }
-   clearTimeout(scrollTimer);
-   scrollTimer = setTimeout(() => {
-    isScrolling = false;
-   }, 150);
-   wakeLoop();
-  },
-  { passive: true },
- );
+ let perfFrames = 0;
+ let perfTime = 0;
+ let perfDone = false;
 
  function frame() {
-  animFrameId = null;
-  if (lost || gaveUp) return;
-
   const raw = clock.getDelta();
   const dt = Math.min(raw, 0.05);
   const t = clock.elapsedTime;
   const y = window.scrollY || 0;
 
-  // Upgrade pixel ratio after 2 seconds if stationary & stable
-  if (currentDPR < maxDPR && !isScrolling && performance.now() - initTime > 2000) {
-   frameCount++;
-   frameTimeAcc += raw;
-   if (frameCount >= 60) {
-    if (frameTimeAcc / frameCount < 0.02) {
-     currentDPR = maxDPR;
-     renderer.setPixelRatio(currentDPR);
-     scenes.forEach((sc) => sc && sc.setPixelRatio && sc.setPixelRatio(currentDPR));
-    }
-    frameCount = 0;
-    frameTimeAcc = 0;
-   }
-  }
-
-  /* Station index and progress */
+  /* Which station are we heading to? The camera dwells at each one for the first
+     ~60% of its scroll length, then flies to the next. */
   let i = 0;
   for (let k = 0; k < n; k++) if (y >= bounds[k].top - 2) i = k;
   let s = i;
@@ -1133,22 +1087,10 @@ export function start(canvas) {
    first = false;
   }
 
-  const prevSS = sS;
   sS = damp(sS, s, 3.2, dt);
-  const scrollDelta = Math.abs(sS - prevSS) + Math.abs(s - sS);
-
-  let maxUDelta = 0;
-  for (let k = 0; k < n; k++) {
-   const prevU = smoothU[k];
-   smoothU[k] = damp(smoothU[k], targetU[k], 4.5, dt);
-   maxUDelta = Math.max(maxUDelta, Math.abs(smoothU[k] - prevU));
-  }
-
-  const prevPtrX = ptr.x;
-  const prevPtrY = ptr.y;
+  for (let k = 0; k < n; k++) smoothU[k] = damp(smoothU[k], targetU[k], 4.5, dt);
   ptr.x = damp(ptr.x, ptr.tx, 3, dt);
   ptr.y = damp(ptr.y, ptr.ty, 3, dt);
-  const ptrDelta = Math.abs(ptr.x - prevPtrX) + Math.abs(ptr.y - prevPtrY);
 
   /* camera */
   const tt = clamp(sS / (STATIONS.length - 1));
@@ -1170,19 +1112,17 @@ export function start(canvas) {
    camera.updateProjectionMatrix();
   }
 
-  /* mood fill light */
+  /* mood: the cool fill light follows the station's colour */
   const a = Math.min(FILL_COLORS.length - 1, Math.floor(sS));
   fill.color.copy(FILL_COLORS[a]).lerp(FILL_COLORS[Math.min(FILL_COLORS.length - 1, a + 1)], sS - a);
 
-  /* active scenes */
+  /* scenes */
   for (let k = 0; k < scenes.length; k++) {
    const visible = k < n && (k === 0 ? sS < 1.4 : sS > 0.05 && Math.abs(sS - k) < 1.4);
    if (visible) {
-    const sc = scenes[k];
-    if (sc) {
-     sc.group.visible = true;
-     sc.update(smoothU[k], t, sS, ptr);
-    }
+    const sc = getScene(k);
+    sc.group.visible = true;
+    sc.update(smoothU[k], t, sS, ptr);
    } else if (scenes[k]) {
     scenes[k].group.visible = false;
    }
@@ -1195,110 +1135,117 @@ export function start(canvas) {
    canvas.classList.add('is-live');
   }
 
-  /* Idle hibernation threshold: when setup is complete, intro animation has settled (>2.5s),
-     and scroll/pointer deltas are below 0.0005, halt rendering until wakeLoop() is triggered by user interaction. */
-  if (
-   setupQueue.length === 0 &&
-   performance.now() - initTime > 2500 &&
-   scrollDelta < 0.0005 &&
-   ptrDelta < 0.0005 &&
-   maxUDelta < 0.0005 &&
-   !isScrolling
-  ) {
-   isIdle = true;
-   return;
-  }
-
-  animFrameId = requestAnimationFrame(frame);
- }
-
- function startMasterLoop() {
-  if (!animFrameId) {
-   isIdle = false;
-   clock.getDelta();
-   animFrameId = requestAnimationFrame(frame);
+  /* Quality guard: if the first ~2 seconds average under ~33 fps, render at pixel ratio 1. */
+  if (!perfDone) {
+   perfFrames += 1;
+   if (perfFrames > 30) perfTime += raw;
+   if (perfFrames === 120) {
+    perfDone = true;
+    if (perfTime / 90 > 0.03 && dprNow > 1) {
+     dprNow = 1;
+     scenes.forEach((sc) => sc.setPixelRatio && sc.setPixelRatio(1));
+     resize();
+    }
+   }
   }
  }
 
- /* ---------- time-sliced multi-frame setup queue (1 step per tick) ---------- */
- const setupQueue = [
-  // Step 0: PMREM Environment
-  () => {
-   initEnvironment();
-  },
-  // Step 1: Star field
-  () => {
-   scene.add(buildStars());
-  },
-  // Step 2: Station 0 (Hero emblem) + start loop
-  () => {
-   getScene(0);
-   resize();
-   startMasterLoop();
-  },
-  // Step 3: Station 1 (Blocks)
-  () => {
-   getScene(1);
-  },
-  // Step 4: Station 2 (Voice)
-  () => {
-   getScene(2);
-  },
-  // Step 5: Station 3 (Data)
-  () => {
-   getScene(3);
-  },
-  // Step 6: Station 4 (Gears)
-  () => {
-   getScene(4);
-  },
-  // Step 7: Station 5 (Healthcare)
-  () => {
-   getScene(5);
-  },
-  // Step 8: Station 6 (Principles)
-  () => {
-   getScene(6);
-  },
-  // Step 9: Station 7 (Finale)
-  () => {
-   getScene(7);
-  },
- ];
+ /* Warm every program, texture and buffer before the first scroll. Building,
+    compiling and first-drawing one station per frame keeps every frame short,
+    including on browsers without KHR_parallel_shader_compile, where three.js has
+    to wait for each shader link instead of linking in parallel. */
+ let lost = false;
+ let gaveUp = false;
+ let lostTimer = 0;
 
- function runSetupQueue() {
-  if (!setupQueue.length || lost || gaveUp) return;
-  const step = setupQueue.shift();
+ const yieldIdle = () =>
+  new Promise((resolve) => {
+   if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(resolve, { timeout: 100 });
+   } else {
+    requestAnimationFrame(resolve);
+   }
+  });
+
+ async function warmUp() {
+  for (let i = 1; i < n; i++) {
+   await yieldIdle();
+   if (lost) return;
+   getScene(i);
+  }
+
+  const hasParallel =
+   renderer.extensions &&
+   typeof renderer.extensions.has === 'function' &&
+   renderer.extensions.has('KHR_parallel_shader_compile');
+
+  for (let i = 0; i < n; i++) {
+   await yieldIdle();
+   if (lost) return;
+   const sc = scenes[i];
+   if (!sc) continue;
+   for (let k = 0; k < scenes.length; k++) if (scenes[k]) scenes[k].group.visible = k === i;
+   const tt = i / (STATIONS.length - 1);
+   camCurve.getPoint(tt, camPos);
+   lookCurve.getPoint(tt, lookPos);
+   camera.position.copy(camPos);
+   camera.lookAt(lookPos);
+   if (hasParallel && renderer.compileAsync) {
+    await renderer.compileAsync(scene, camera);
+   } else if (renderer.compile) {
+    renderer.compile(scene, camera);
+   }
+   if (lost) return;
+   renderer.render(scene, camera);
+  }
+
+  for (let k = 0; k < scenes.length; k++) if (scenes[k]) scenes[k].group.visible = false;
+ }
+
+ let failed = false;
+ const guarded = () => {
   try {
-   step();
+   frame();
   } catch (err) {
-   console.warn('[stage] step error:', err);
+   if (failed) return;
+   failed = true;
+   console.warn('[stage] render error, using the static page:', err);
+   renderer.setAnimationLoop(null);
+   root.classList.add('no-stage');
+   window.dispatchEvent(new Event('wt:stage-fail'));
   }
-  if (setupQueue.length) {
-   requestAnimationFrame(runSetupQueue);
-  }
+ };
+
+ getScene(0);
+ if (!failed && !lost) renderer.setAnimationLoop(guarded);
+
+ if ('requestIdleCallback' in window) {
+  window.requestIdleCallback(() => {
+   warmUp().catch((err) => console.warn('[stage] warm-up skipped:', err));
+  }, { timeout: 2500 });
+ } else {
+  setTimeout(() => {
+   warmUp().catch((err) => console.warn('[stage] warm-up skipped:', err));
+  }, 1200);
  }
 
- /* Run step queue across consecutive animation frames */
- requestAnimationFrame(runSetupQueue);
-
- /* Visibility & Context handlers */
  document.addEventListener('visibilitychange', () => {
-  if (lost || gaveUp) return;
-  if (document.hidden) {
-   if (animFrameId) cancelAnimationFrame(animFrameId);
-   animFrameId = null;
-   isIdle = true;
-  } else {
-   wakeLoop();
+  if (failed || lost || gaveUp) return;
+  if (document.hidden) renderer.setAnimationLoop(null);
+  else {
+   clock.getDelta();
+   renderer.setAnimationLoop(guarded);
   }
  });
 
+ /* A lost context is usually temporary: a GPU reset, a laptop waking up, a
+    driver update. Keep the loop parked and let the browser hand the context
+    back, then rebuild the GPU resources. Only give up on the 3D, and show the
+    plain page, if it never comes back. */
  canvas.addEventListener('webglcontextlost', (event) => {
   event.preventDefault();
   lost = true;
-  if (animFrameId) cancelAnimationFrame(animFrameId);
-  animFrameId = null;
+  renderer.setAnimationLoop(null);
   clearTimeout(lostTimer);
   lostTimer = setTimeout(() => {
    if (!lost) return;
@@ -1311,10 +1258,15 @@ export function start(canvas) {
 
  canvas.addEventListener('webglcontextrestored', () => {
   clearTimeout(lostTimer);
-  if (gaveUp) return;
+  if (gaveUp || failed) return;
   lost = false;
+  clock.getDelta();
   initEnvironment();
   resize();
-  wakeLoop();
+  warmUp()
+   .catch((err) => console.warn('[stage] re-warm skipped:', err))
+   .then(() => {
+    if (!failed && !lost) renderer.setAnimationLoop(guarded);
+   });
  });
 }
