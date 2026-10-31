@@ -30,6 +30,7 @@ html {
  background: var(--ink);
  color: var(--ivory);
  font-family: var(--sans);
+ text-size-adjust: 100%;
  -webkit-text-size-adjust: 100%;
  overflow-x: clip;
  /* clip, not hidden: keeps position: sticky working */

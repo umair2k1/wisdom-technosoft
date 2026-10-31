@@ -1139,45 +1139,40 @@ export function start(canvas) {
   }
  }
 
- /* Warm every program, texture and buffer before the first scroll. compileAsync
-    links shaders in parallel (KHR_parallel_shader_compile) so the hero intro keeps
-    running; the low-resolution first draws create anything the compile pass could
-    not, while the canvas is still transparent. */
- async function warmUp() {
-  const w = canvas.clientWidth || window.innerWidth;
-  const h = canvas.clientHeight || window.innerHeight;
-  const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
-  try {
-   /* One station per frame. Building a scene and its first draw are the
-      expensive parts; yielding keeps the hero intro at full frame rate. */
-   for (let i = 0; i < n; i++) {
-    getScene(i);
-    await nextFrame();
-   }
+ /* Warm every program, texture and buffer before the first scroll. Building,
+    compiling and first-drawing one station per frame keeps every frame short,
+    including on browsers without KHR_parallel_shader_compile, where three.js has
+    to wait for each shader link instead of linking in parallel. */
+ let lost = false;
+ let gaveUp = false;
+ let lostTimer = 0;
 
+ async function warmUp() {
+  const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+  for (let i = 0; i < n; i++) {
+   getScene(i);
+   await nextFrame();
+   if (lost) return;
+  }
+
+  for (let i = 0; i < n; i++) {
+   const sc = scenes[i];
+   if (!sc) continue;
+   for (let k = 0; k < scenes.length; k++) if (scenes[k]) scenes[k].group.visible = k === i;
+   const tt = i / (STATIONS.length - 1);
+   camCurve.getPoint(tt, camPos);
+   lookCurve.getPoint(tt, lookPos);
+   camera.position.copy(camPos);
+   camera.lookAt(lookPos);
    if (renderer.compileAsync) await renderer.compileAsync(scene, camera);
    else renderer.compile(scene, camera);
-
-   renderer.setPixelRatio(1);
-   renderer.setSize(320, 180, false);
-   for (let i = 0; i < n; i++) {
-    const sc = scenes[i];
-    if (!sc) continue;
-    for (let k = 0; k < scenes.length; k++) if (scenes[k]) scenes[k].group.visible = k === i;
-    const tt = i / (STATIONS.length - 1);
-    camCurve.getPoint(tt, camPos);
-    lookCurve.getPoint(tt, lookPos);
-    camera.position.copy(camPos);
-    camera.lookAt(lookPos);
-    renderer.render(scene, camera);
-    await nextFrame();
-   }
-  } finally {
-   for (let k = 0; k < scenes.length; k++) if (scenes[k]) scenes[k].group.visible = false;
-   renderer.setPixelRatio(dprNow);
-   renderer.setSize(w, h, false);
-   resize();
+   if (lost) return;
+   renderer.render(scene, camera);
+   await nextFrame();
+   if (lost) return;
   }
+
+  for (let k = 0; k < scenes.length; k++) if (scenes[k]) scenes[k].group.visible = false;
  }
 
  let failed = false;
@@ -1196,11 +1191,11 @@ export function start(canvas) {
  warmUp()
   .catch((err) => console.warn('[stage] warm-up skipped:', err))
   .then(() => {
-   if (!failed) renderer.setAnimationLoop(guarded);
+   if (!failed && !lost) renderer.setAnimationLoop(guarded);
   });
 
  document.addEventListener('visibilitychange', () => {
-  if (failed) return;
+  if (failed || lost || gaveUp) return;
   if (document.hidden) renderer.setAnimationLoop(null);
   else {
    clock.getDelta();
@@ -1208,10 +1203,33 @@ export function start(canvas) {
   }
  });
 
+ /* A lost context is usually temporary: a GPU reset, a laptop waking up, a
+    driver update. Keep the loop parked and let the browser hand the context
+    back, then rebuild the GPU resources. Only give up on the 3D, and show the
+    plain page, if it never comes back. */
  canvas.addEventListener('webglcontextlost', (event) => {
   event.preventDefault();
+  lost = true;
   renderer.setAnimationLoop(null);
-  root.classList.add('no-stage');
-  window.dispatchEvent(new Event('wt:stage-fail'));
+  clearTimeout(lostTimer);
+  lostTimer = setTimeout(() => {
+   if (!lost) return;
+   gaveUp = true;
+   root.classList.add('no-stage');
+   window.dispatchEvent(new Event('wt:stage-fail'));
+  }, 5000);
+ });
+
+ canvas.addEventListener('webglcontextrestored', () => {
+  clearTimeout(lostTimer);
+  if (gaveUp || failed) return;
+  lost = false;
+  clock.getDelta();
+  resize();
+  warmUp()
+   .catch((err) => console.warn('[stage] re-warm skipped:', err))
+   .then(() => {
+    if (!failed && !lost) renderer.setAnimationLoop(guarded);
+   });
  });
 }
