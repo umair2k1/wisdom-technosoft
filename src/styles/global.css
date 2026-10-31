@@ -30,11 +30,15 @@ html {
  background: var(--ink);
  color: var(--ivory);
  font-family: var(--sans);
- text-size-adjust: 100%;
- -webkit-text-size-adjust: 100%;
  overflow-x: clip;
  /* clip, not hidden: keeps position: sticky working */
  color-scheme: dark;
+}
+@supports (text-size-adjust: 100%) or (-webkit-text-size-adjust: 100%) {
+ html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+ }
 }
 
 html.menu-open {
@@ -440,7 +444,13 @@ html.menu-open .menu {
  font-size: clamp(1rem, 1.25vw, 1.15rem);
  line-height: 1.62;
  color: var(--text);
- text-wrap: pretty;
+ text-wrap: balance;
+}
+
+@supports (text-wrap: pretty) {
+ .desc {
+  text-wrap: pretty;
+ }
 }
 
 .tags {
@@ -568,6 +578,7 @@ html.menu-open .menu {
  will-change: transform, opacity;
  backface-visibility: hidden;
  transform: translateZ(0);
+ filter: none;
 }
 
 .lede {
@@ -576,7 +587,13 @@ html.menu-open .menu {
  font-size: clamp(1.02rem, 1.3vw, 1.2rem);
  line-height: 1.6;
  color: var(--text);
- text-wrap: pretty;
+ text-wrap: balance;
+}
+
+@supports (text-wrap: pretty) {
+ .lede {
+  text-wrap: pretty;
+ }
 }
 
 .cta-row {

@@ -36,12 +36,17 @@ function seeded(seed) {
  };
 }
 
+let activeRenderer = null;
+
 export function start(canvas) {
+ if (!canvas || canvas.dataset.worldReady === 'true' || activeRenderer) return;
+ canvas.dataset.worldReady = 'true';
+
  const chapters = Array.from(document.querySelectorAll('[data-chapter]'));
  if (!chapters.length) return;
 
  const mobile = window.matchMedia('(max-width: 767px), (pointer: coarse)').matches;
- const DPR = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 1.75);
+ const DPR = Math.min(window.devicePixelRatio || 1, 1.5);
  let dprNow = DPR; // drops to 1 if the first seconds run slowly
  const rand = seeded(2026);
  const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -53,6 +58,7 @@ export function start(canvas) {
   alpha: true,
   powerPreference: 'high-performance',
  });
+ activeRenderer = renderer;
  renderer.setPixelRatio(DPR);
  renderer.setClearColor(0x000000, 0);
  renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -120,26 +126,28 @@ export function start(canvas) {
  );
 
  /* ---------- helpers ---------- */
- function glowTexture() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const g = c.getContext('2d');
-  const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-  gr.addColorStop(0, 'rgba(255,255,255,1)');
-  gr.addColorStop(0.25, 'rgba(255,255,255,0.35)');
-  gr.addColorStop(1, 'rgba(255,255,255,0)');
-  g.fillStyle = gr;
-  g.fillRect(0, 0, 128, 128);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
+ let glow = null;
+ function getGlowTexture() {
+  if (!glow) {
+   const c = document.createElement('canvas');
+   c.width = c.height = 128;
+   const g = c.getContext('2d');
+   const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+   gr.addColorStop(0, 'rgba(255,255,255,1)');
+   gr.addColorStop(0.25, 'rgba(255,255,255,0.35)');
+   gr.addColorStop(1, 'rgba(255,255,255,0)');
+   g.fillStyle = gr;
+   g.fillRect(0, 0, 128, 128);
+   glow = new THREE.CanvasTexture(c);
+   glow.colorSpace = THREE.SRGBColorSpace;
+  }
+  return glow;
  }
- const glow = glowTexture();
 
  function addHalo(group, color, size, opacity, z) {
   const sprite = new THREE.Sprite(
    new THREE.SpriteMaterial({
-    map: glow,
+    map: getGlowTexture(),
     color,
     transparent: true,
     opacity,
@@ -1007,7 +1015,7 @@ export function start(canvas) {
  function resize() {
   const w = canvas.clientWidth || window.innerWidth;
   const h = canvas.clientHeight || window.innerHeight;
-  renderer.setPixelRatio(dprNow);
+  renderer.setPixelRatio(Math.min(dprNow, 1.5));
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
@@ -1147,15 +1155,30 @@ export function start(canvas) {
  let gaveUp = false;
  let lostTimer = 0;
 
+ const yieldIdle = () =>
+  new Promise((resolve) => {
+   if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(resolve, { timeout: 100 });
+   } else {
+    requestAnimationFrame(resolve);
+   }
+  });
+
  async function warmUp() {
-  const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
-  for (let i = 0; i < n; i++) {
-   getScene(i);
-   await nextFrame();
+  for (let i = 1; i < n; i++) {
+   await yieldIdle();
    if (lost) return;
+   getScene(i);
   }
 
+  const hasParallel =
+   renderer.extensions &&
+   typeof renderer.extensions.has === 'function' &&
+   renderer.extensions.has('KHR_parallel_shader_compile');
+
   for (let i = 0; i < n; i++) {
+   await yieldIdle();
+   if (lost) return;
    const sc = scenes[i];
    if (!sc) continue;
    for (let k = 0; k < scenes.length; k++) if (scenes[k]) scenes[k].group.visible = k === i;
@@ -1164,12 +1187,13 @@ export function start(canvas) {
    lookCurve.getPoint(tt, lookPos);
    camera.position.copy(camPos);
    camera.lookAt(lookPos);
-   if (renderer.compileAsync) await renderer.compileAsync(scene, camera);
-   else renderer.compile(scene, camera);
+   if (hasParallel && renderer.compileAsync) {
+    await renderer.compileAsync(scene, camera);
+   } else if (renderer.compile) {
+    renderer.compile(scene, camera);
+   }
    if (lost) return;
    renderer.render(scene, camera);
-   await nextFrame();
-   if (lost) return;
   }
 
   for (let k = 0; k < scenes.length; k++) if (scenes[k]) scenes[k].group.visible = false;
@@ -1188,11 +1212,19 @@ export function start(canvas) {
    window.dispatchEvent(new Event('wt:stage-fail'));
   }
  };
- warmUp()
-  .catch((err) => console.warn('[stage] warm-up skipped:', err))
-  .then(() => {
-   if (!failed && !lost) renderer.setAnimationLoop(guarded);
-  });
+
+ getScene(0);
+ if (!failed && !lost) renderer.setAnimationLoop(guarded);
+
+ if ('requestIdleCallback' in window) {
+  window.requestIdleCallback(() => {
+   warmUp().catch((err) => console.warn('[stage] warm-up skipped:', err));
+  }, { timeout: 2500 });
+ } else {
+  setTimeout(() => {
+   warmUp().catch((err) => console.warn('[stage] warm-up skipped:', err));
+  }, 1200);
+ }
 
  document.addEventListener('visibilitychange', () => {
   if (failed || lost || gaveUp) return;
@@ -1215,6 +1247,7 @@ export function start(canvas) {
   lostTimer = setTimeout(() => {
    if (!lost) return;
    gaveUp = true;
+   activeRenderer = null;
    root.classList.add('no-stage');
    window.dispatchEvent(new Event('wt:stage-fail'));
   }, 5000);
@@ -1225,6 +1258,7 @@ export function start(canvas) {
   if (gaveUp || failed) return;
   lost = false;
   clock.getDelta();
+  initEnvironment();
   resize();
   warmUp()
    .catch((err) => console.warn('[stage] re-warm skipped:', err))

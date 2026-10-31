@@ -75,6 +75,20 @@ const jsonLd = {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="https://fonts.gstatic.com/s/instrumentserif/v5/jizBRFtNs2ka5fXjeivQ4LroWlx-6zUTjg.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="https://fonts.gstatic.com/s/instrumentserif/v5/jizHRFtNs2ka5fXjeivQ4LroWlx-6zAjjH7M.woff2"
+      crossorigin
+    />
+    <link
       href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500&display=swap"
       rel="stylesheet"
     />
@@ -91,10 +105,7 @@ const jsonLd = {
         var gl = false;
         try {
           var c = document.createElement('canvas');
-          var ctx = c.getContext('webgl2') || c.getContext('webgl');
-          gl = !!ctx;
-          var lose = ctx && ctx.getExtension && ctx.getExtension('WEBGL_lose_context');
-          if (lose) lose.loseContext();
+          gl = !!(window.WebGLRenderingContext && (c.getContext('webgl2') || c.getContext('webgl')));
         } catch (e) {}
         var conn = navigator.connection;
         var lean = !!(
