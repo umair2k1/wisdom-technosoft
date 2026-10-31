@@ -4,6 +4,7 @@ export const site = {
   phone: '+91 74473 31127',
   phoneHref: 'tel:+917447331127',
   phoneIntl: '+917447331127',
+  gstin: '27FBUPG9106H1Z7',
   address: 'Opposite Bank of Baroda, Ward Number 3, Parsodi, Trimurtee Nagar, Nagpur – 440022, Maharashtra',
   street: 'Opposite Bank of Baroda, Ward Number 3, Parsodi, Trimurtee Nagar',
   city: 'Nagpur',

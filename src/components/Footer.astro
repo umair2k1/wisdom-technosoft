@@ -1,5 +1,6 @@
 ---
 import Logo from './Logo.astro';
+import { site } from '../data/site.js';
 
 const year = new Date().getFullYear();
 ---
@@ -16,6 +17,8 @@ const year = new Date().getFullYear();
     </p>
     <p>
       <a href="/privacy">Privacy notice</a>
+      <span aria-hidden="true"> · </span>
+      GSTIN {site.gstin}
       <span aria-hidden="true"> · </span>
       Nagpur, Maharashtra, India
       <span aria-hidden="true"> · </span>
