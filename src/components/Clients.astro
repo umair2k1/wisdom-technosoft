@@ -1,0 +1,35 @@
+---
+import { clients } from '../data/content.js';
+---
+
+<section id="clients" class="clients" data-hud-label="Clients">
+  <div class="clients-in">
+    <div class="clients-head" data-reveal>
+      <p class="kicker">Clients</p>
+      <h2 class="title big">In good company.</h2>
+      <p class="desc">A few of the organisations we are proud to work with.</p>
+    </div>
+
+    <ul class="clients-grid">
+      {
+        clients.map((client) => {
+          const [first, ...rest] = client.name.split(' ');
+          return (
+            <li data-reveal>
+              <div class="client-tile">
+                {client.logo ? (
+                  <img src={client.logo} alt={client.name} loading="lazy" decoding="async" />
+                ) : (
+                  <span class="client-wordmark">
+                    <span class="client-wordmark-main">{first}</span>
+                    <span class="client-wordmark-sub">{rest.join(' · ')}</span>
+                  </span>
+                )}
+              </div>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </div>
+</section>

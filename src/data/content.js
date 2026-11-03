@@ -90,6 +90,24 @@ export const team = {
   ],
 };
 
+export const clients = [
+  { name: 'SEBI', logo: '/clients/sebi.webp' },
+  { name: 'Elevate Industrial Solutions Pune', logo: '/clients/elevate.webp' },
+  { name: 'Tata AIG Insurance', logo: '/clients/tata-aig.webp' },
+  { name: 'ICICI Lombard', logo: '/clients/icici-lombard.svg' },
+  { name: 'Asahi KASEI', logo: '/clients/asahi-kasei.svg' },
+  { name: 'ELICO', logo: '/clients/elico.webp' },
+  { name: 'Sicrama', logo: '/clients/sicrama.webp' },
+  { name: 'Eliora', logo: '/clients/eliora.webp' },
+  { name: 'Vflyorions', logo: '/clients/vflyorions.webp' },
+  { name: 'Microdiaa', logo: '/clients/microdiaa.webp' },
+  { name: 'Align Infotech', logo: '/clients/align-infotech.webp' },
+  { name: 'SS Infotech', logo: '/clients/ss-infotech.webp' },
+  { name: 'Midline Media Solution', logo: '/clients/midline.webp' },
+  { name: 'Splendid Electronics', logo: '/clients/splendid.webp' },
+  { name: 'FMS EduTech Mumbai' },
+];
+
 export const contact = {
   title: 'Tell us what you need built, fixed or run.',
   lede: 'A few lines are enough. We reply within 1 business day.',
