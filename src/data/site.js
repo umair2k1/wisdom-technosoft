@@ -1,6 +1,6 @@
 export const site = {
   name: 'Wisdom Technosoft',
-  email: 'wisdomtechnosoft04@gmail.com',
+  email: 'info@wisdomtechnosoft.com',
   phone: '+91 74473 31127',
   phoneHref: 'tel:+917447331127',
   phoneIntl: '+917447331127',
