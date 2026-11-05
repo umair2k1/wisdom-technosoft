@@ -1,8 +1,8 @@
 /* All page copy lives here. Edit text without touching components. */
 
 export const hero = {
-  eyebrow: 'Wisdom Technosoft · Nagpur, India',
-  lede: 'We build the software, make the customer calls and keep the records straight, then take on the back-office work that follows. One team in Nagpur, one standard across all of it.',
+  eyebrow: 'Wisdom Technosoft · 5 Years of Delivery · Nagpur, India',
+  lede: 'For 5 years, we’ve built the software, made the customer calls and kept the records straight, then taken on the back-office work that follows. One team in Nagpur, one standard across all of it.',
 };
 
 /* Order matters: chapter i+1 maps to station i+1 in the 3D world (see scripts/stage.js).
@@ -65,7 +65,7 @@ export const chapters = [
   },
 ];
 
-export const principlesIntro = 'Four rules we hold ourselves to, from the first call to the handover.';
+export const principlesIntro = 'Four rules we hold ourselves to, refined over 5 years of work from the first call to the handover.';
 
 export const principles = [
   { title: 'Quality', text: 'We sweat the details so the result feels effortless.' },
@@ -78,10 +78,10 @@ export const vision =
   'To be among the top business process outsourcing providers, known for clarity, care and consistency.';
 
 export const mission =
-  'Simplifying data is what this industry runs on. We aim to be resourceful, inventive and quick to respond to what clients need, and to deliver the same quality every time. When their business does well, so does ours.';
+  'Simplifying data is what this industry runs on. Over 5 years in business, our focus has been simple: resourceful, inventive execution, quick turnaround to client needs, and the same dependable quality every time. When their business does well, so does ours.';
 
 export const team = {
-  lede: 'A small senior team across software, telecalling and data, working as one.',
+  lede: 'A small senior team with 5 years of shared execution across software, telecalling and data, working as one.',
   roles: [
     { role: 'Managing Director', focus: 'Executive leadership' },
     { role: 'Managing Director', focus: 'Operations & delivery' },
@@ -91,7 +91,6 @@ export const team = {
 };
 
 export const clients = [
-  { name: 'SEBI', logo: '/clients/sebi.webp' },
   { name: 'Elevate Industrial Solutions Pune', logo: '/clients/elevate.webp' },
   { name: 'Tata AIG Insurance', logo: '/clients/tata-aig.webp' },
   { name: 'ICICI Lombard', logo: '/clients/icici-lombard.svg' },
