@@ -91,6 +91,7 @@ export const team = {
 };
 
 export const clients = [
+  { name: 'SEBI', logo: '/clients/sebi.webp' },
   { name: 'Elevate Industrial Solutions Pune', logo: '/clients/elevate.webp' },
   { name: 'Tata AIG Insurance', logo: '/clients/tata-aig.webp' },
   { name: 'ICICI Lombard', logo: '/clients/icici-lombard.svg' },
